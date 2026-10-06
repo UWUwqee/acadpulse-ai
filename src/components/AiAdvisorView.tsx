@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AcademicTask, Subject, WorkloadAnalysis } from '../types';
+import { BrandMark } from './BrandMark';
 import {
   Sparkles,
   Loader2,
@@ -85,11 +86,14 @@ export const AiAdvisorView: React.FC<AiAdvisorViewProps> = ({
       {/* Banner / Header */}
       <div className="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-900/40 rounded-lg p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-lg font-bold text-white tracking-tight">
-              AI Workload Advisor
-            </h2>
+          <div className="flex items-center gap-3 mb-1">
+            <BrandMark size="sm" />
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                AI Workload Advisor
+              </h2>
+            </div>
           </div>
         </div>
 
