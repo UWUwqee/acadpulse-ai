@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { useAcademicStore } from './hooks/useAcademicStore';
-import { initAuth, logoutGoogle, detectAllPendingActivities } from './services/googleWorkspace';
+import { initAuth, logoutGoogle, detectAllPendingActivities, debugGoogleWorkspaceSync } from './services/googleWorkspace';
 import { AuthScreen } from './components/AuthScreen';
 import { Navbar } from './components/Navbar';
 import { InstitutionalLoginBanner } from './components/InstitutionalLoginBanner';
@@ -121,6 +121,7 @@ export default function App() {
     );
 
     try {
+      await debugGoogleWorkspaceSync(token);
       const result = await detectAllPendingActivities(token);
 
       if (result.courses.length > 0 || result.activities.length > 0) {
@@ -225,114 +226,114 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-600 selection:text-white">
-      {/* Universal Top Bar */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenNewTask={handleOpenNewTask}
-        onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
-        connectionStatus={connectionStatus}
-        user={currentUser}
-        onLogout={handleLogout}
-      />
+    <div className="min-h-screen bg-[#020b16] text-slate-100 selection:bg-indigo-600 selection:text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.12),_transparent_24%)] pointer-events-none" />
 
-      {/* Auto-detection Progress Banner */}
-      {isAutoDetecting && (
-        <div className="bg-indigo-950/80 border-b border-indigo-800/80 px-4 py-2.5 flex items-center justify-center gap-2.5 text-xs text-indigo-200">
-          <Loader2 className="w-4 h-4 animate-spin text-indigo-400 shrink-0" />
-          <span className="font-medium">{detectStatusMessage || 'Detecting pending school activities...'}</span>
-        </div>
-      )}
-
-      {/* Main Content Workspace Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Institutional School Gmail Pending Activity Detection Banner */}
-        <InstitutionalLoginBanner
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenNewTask={handleOpenNewTask}
+          onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
+          connectionStatus={connectionStatus}
           user={currentUser}
-          token={accessToken}
           onLogout={handleLogout}
-          onSyncActivities={handleSyncActivities}
-          existingSubjects={subjects}
         />
 
-        {/* Real-time Workload Metrics Status Strip */}
-        <WorkloadMetricsBar
-          metrics={workloadMetrics}
-          tasks={tasks}
-          onOpenAiAdvisor={() => setActiveTab('ai')}
-        />
-
-        {/* Tabbed Views */}
-        {activeTab === 'tasks' && (
-          <TaskListView
-            tasks={tasks}
-            subjects={subjects}
-            onToggleStatus={toggleTaskStatus}
-            onToggleSubtask={toggleSubtask}
-            onEditTask={handleEditTask}
-            onDeleteTask={deleteTask}
-            onOpenNewTask={handleOpenNewTask}
-            onUpdateTask={updateTask}
-          />
-        )}
-
-        {activeTab === 'schedule' && (
-          <CalendarView
-            tasks={tasks}
-            subjects={subjects}
-            onOpenNewTask={handleOpenNewTask}
-            onEditTask={handleEditTask}
-          />
-        )}
-
-        {activeTab === 'resources' && (
-          <ResourceHubView
-            resources={resources}
-            subjects={subjects}
-            onOpenNewResource={handleOpenNewResource}
-            onEditResource={handleEditResource}
-            onDeleteResource={deleteResource}
-          />
-        )}
-
-        {activeTab === 'ai' && (
-          <AiAdvisorView
-            tasks={tasks}
-            subjects={subjects}
-            metrics={workloadMetrics}
-            onUpdateTask={updateTask}
-          />
-        )}
-
-        {activeTab === 'courses' && (
-          <SubjectDirectoryView
-            subjects={subjects}
-            tasks={tasks}
-            resources={resources}
-            onOpenNewSubject={handleOpenNewSubject}
-            onEditSubject={handleEditSubject}
-            onDeleteSubject={deleteSubject}
-            onSelectSubjectFilter={() => {
-              setActiveTab('tasks');
-            }}
-          />
-        )}
-      </main>
-
-      {/* Quiet Academic Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-5 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div>
-            AcadPulse-AI · Real-time Academic Resource & Workload Management System
+        {isAutoDetecting && (
+          <div className="border-b border-indigo-900/70 bg-indigo-950/60 px-4 py-2.5">
+            <div className="mx-auto flex max-w-7xl items-center justify-center gap-2.5 text-xs text-indigo-100">
+              <Loader2 className="h-4 w-4 animate-spin text-indigo-300" />
+              <span className="font-medium">{detectStatusMessage || 'Detecting pending school activities...'}</span>
+            </div>
           </div>
-          <div>
-            Built for college & university students across all institutional domains
-          </div>
-        </div>
-      </footer>
+        )}
 
-      {/* Task Modal */}
+        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mb-6 rounded-3xl border border-slate-800/80 bg-slate-900/60 p-3 shadow-xl shadow-indigo-950/10 backdrop-blur-sm">
+            <InstitutionalLoginBanner
+              user={currentUser}
+              token={accessToken}
+              onLogout={handleLogout}
+              onSyncActivities={handleSyncActivities}
+              existingSubjects={subjects}
+            />
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3 shadow-lg shadow-slate-950/40">
+            <WorkloadMetricsBar
+              metrics={workloadMetrics}
+              tasks={tasks}
+              onOpenAiAdvisor={() => setActiveTab('ai')}
+            />
+          </div>
+
+          <div className="flex-1 rounded-2xl border border-slate-800/80 bg-slate-900/45 p-3 shadow-lg shadow-slate-950/40">
+            {activeTab === 'tasks' && (
+              <TaskListView
+                tasks={tasks}
+                subjects={subjects}
+                onToggleStatus={toggleTaskStatus}
+                onToggleSubtask={toggleSubtask}
+                onEditTask={handleEditTask}
+                onDeleteTask={deleteTask}
+                onOpenNewTask={handleOpenNewTask}
+                onUpdateTask={updateTask}
+              />
+            )}
+
+            {activeTab === 'schedule' && (
+              <CalendarView
+                tasks={tasks}
+                subjects={subjects}
+                onOpenNewTask={handleOpenNewTask}
+                onEditTask={handleEditTask}
+              />
+            )}
+
+            {activeTab === 'resources' && (
+              <ResourceHubView
+                resources={resources}
+                subjects={subjects}
+                onOpenNewResource={handleOpenNewResource}
+                onEditResource={handleEditResource}
+                onDeleteResource={deleteResource}
+              />
+            )}
+
+            {activeTab === 'ai' && (
+              <AiAdvisorView
+                tasks={tasks}
+                subjects={subjects}
+                metrics={workloadMetrics}
+                onUpdateTask={updateTask}
+              />
+            )}
+
+            {activeTab === 'courses' && (
+              <SubjectDirectoryView
+                subjects={subjects}
+                tasks={tasks}
+                resources={resources}
+                onOpenNewSubject={handleOpenNewSubject}
+                onEditSubject={handleEditSubject}
+                onDeleteSubject={deleteSubject}
+                onSelectSubjectFilter={() => {
+                  setActiveTab('tasks');
+                }}
+              />
+            )}
+          </div>
+        </main>
+
+        <footer className="border-t border-slate-900 bg-slate-950/80 py-5 text-center text-[11px] text-slate-500">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 sm:flex-row">
+            <div>AcadPulse-AI · Real-time Academic Resource & Workload Management System</div>
+            <div>Built for college & university students across all institutional domains</div>
+          </div>
+        </footer>
+      </div>
+
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}

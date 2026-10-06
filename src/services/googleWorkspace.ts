@@ -90,6 +90,36 @@ export interface DetectedSchoolActivity {
   estimatedHours: number;
 }
 
+export async function debugGoogleWorkspaceSync(token: string) {
+  const debugInfo: Record<string, any> = {};
+
+  for (const url of [
+    'https://classroom.googleapis.com/v1/courses?studentId=me&courseStates=ACTIVE',
+    'https://classroom.googleapis.com/v1/userCourses?userId=me&courseStates=ACTIVE',
+    'https://classroom.googleapis.com/v1/courses?courseStates=ACTIVE',
+  ]) {
+    try {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const json = await res.json();
+      debugInfo[url] = {
+        status: res.status,
+        ok: res.ok,
+        payload: json,
+      };
+    } catch (err) {
+      debugInfo[url] = { status: 'error', error: err };
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    console.group('[AcadPulse] Google Workspace debug');
+    console.log(JSON.stringify(debugInfo, null, 2));
+    console.groupEnd();
+  }
+
+  return debugInfo;
+}
+
 // 1. Google Classroom: Fetch active courses and pending coursework
 export async function fetchClassroomActivities(
   token: string
@@ -474,6 +504,15 @@ export async function detectAllPendingActivities(token: string): Promise<{
       createdAt: new Date().toISOString(),
     });
   }
+
+  console.log('[AcadPulse] Classroom sync result', {
+    classroomCourses: classroomResult.courses.length,
+    classroomActivities: classroomResult.activities.length,
+    calendarActivities: calendarResult.activities.length,
+    taskActivities: tasksResult.activities.length,
+    allActivities: allActivities.length,
+    sampleFirst: allActivities[0],
+  });
 
   return {
     courses: Array.from(coursesMap.values()),
