@@ -86,8 +86,8 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-lg max-w-md w-full p-6 shadow-2xl relative my-8">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
+      <div className="bg-slate-900 border border-slate-800 rounded-lg max-w-md w-full max-h-[calc(100dvh-1.5rem)] overflow-y-auto p-4 sm:p-6 shadow-2xl relative my-auto sm:my-8">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-indigo-400" />

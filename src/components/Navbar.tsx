@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Zone 2: Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 sm:gap-2">
+        <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-1">
           <button
             onClick={() => setActiveTab('tasks')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap ${
@@ -113,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
           {adminAccess && <button
             onClick={() => setActiveTab('admin')}
-            className={`flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${activeTab === 'admin' ? 'bg-cyan-950/80 text-cyan-200' : 'text-cyan-300 hover:bg-cyan-950/40'}`}
+            className={`flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-semibold transition-colors ${activeTab === 'admin' ? 'bg-cyan-950/80 text-cyan-200' : 'text-cyan-300 hover:bg-cyan-950/40'}`}
           ><ShieldCheck className="h-3.5 w-3.5" />Admin</button>}
         </nav>
 
@@ -122,10 +122,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* New Deliverable Button */}
           <button
             onClick={onOpenNewTask}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md shadow-sm shadow-indigo-600/30 transition-colors cursor-pointer whitespace-nowrap"
+            title="Add deliverable"
+            aria-label="Add deliverable"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md shadow-sm shadow-indigo-600/30 transition-colors cursor-pointer whitespace-nowrap sm:px-3"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Deliverable</span>
+            <span className="hidden sm:inline">Add Deliverable</span>
           </button>
 
           {/* User Profile & Sign Out */}
@@ -142,54 +144,54 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Mobile Subnavigation */}
-      <div className="md:hidden flex items-center justify-around px-2 py-2 border-t border-slate-800 bg-slate-950 text-xs overflow-x-auto">
+      <nav aria-label="Primary navigation" className="xl:hidden flex items-center justify-start gap-1 px-2 py-2 border-t border-slate-800 bg-slate-950 text-xs overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
         <button
           onClick={() => setActiveTab('tasks')}
-          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'tasks' ? 'text-white font-semibold' : 'text-slate-400'}`}
+          className={`shrink-0 px-2 py-1 rounded whitespace-nowrap ${activeTab === 'tasks' ? 'text-white font-semibold' : 'text-slate-400'}`}
         >
           Tasks
         </button>
         <button
           onClick={() => setActiveTab('schedule')}
-          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'schedule' ? 'text-white font-semibold' : 'text-slate-400'}`}
+          className={`shrink-0 px-2 py-1 rounded whitespace-nowrap ${activeTab === 'schedule' ? 'text-white font-semibold' : 'text-slate-400'}`}
         >
           Calendar
         </button>
         <button
           onClick={() => setActiveTab('resources')}
-          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'resources' ? 'text-white font-semibold' : 'text-slate-400'}`}
+          className={`shrink-0 px-2 py-1 rounded whitespace-nowrap ${activeTab === 'resources' ? 'text-white font-semibold' : 'text-slate-400'}`}
         >
           Resources
         </button>
         <button
           onClick={() => setActiveTab('ai')}
-          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'ai' ? 'text-indigo-400 font-semibold' : 'text-slate-400'}`}
+          className={`shrink-0 px-2 py-1 rounded whitespace-nowrap ${activeTab === 'ai' ? 'text-indigo-400 font-semibold' : 'text-slate-400'}`}
         >
           AI Advisor
         </button>
         <button
           onClick={() => setActiveTab('courses')}
-          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'courses' ? 'text-white font-semibold' : 'text-slate-400'}`}
+          className={`shrink-0 px-2 py-1 rounded whitespace-nowrap ${activeTab === 'courses' ? 'text-white font-semibold' : 'text-slate-400'}`}
         >
           Courses
         </button>
         <button
           onClick={() => setActiveTab('tools')}
-          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'tools' ? 'text-white font-semibold' : 'text-slate-400'}`}
+          className={`shrink-0 px-2 py-1 rounded whitespace-nowrap ${activeTab === 'tools' ? 'text-white font-semibold' : 'text-slate-400'}`}
         >
           Tools
         </button>
         <button
           onClick={() => setActiveTab('chat')}
-          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'chat' ? 'text-white font-semibold' : 'text-slate-400'}`}
+          className={`shrink-0 px-2 py-1 rounded whitespace-nowrap ${activeTab === 'chat' ? 'text-white font-semibold' : 'text-slate-400'}`}
         >
           Chat
         </button>
         {adminAccess && <button
           onClick={() => setActiveTab('admin')}
-          className={`px-2 py-1 whitespace-nowrap ${activeTab === 'admin' ? 'font-semibold text-cyan-200' : 'text-cyan-300'}`}
+          className={`shrink-0 px-2 py-1 whitespace-nowrap ${activeTab === 'admin' ? 'font-semibold text-cyan-200' : 'text-cyan-300'}`}
         >Admin</button>}
-      </div>
+      </nav>
     </header>
   );
 };

@@ -274,7 +274,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ user }) => {
   const activeFriend = activeFriendUid ? friendProfiles[activeFriendUid] : null;
 
   return (
-    <div className="grid min-h-[620px] overflow-hidden rounded-xl border border-slate-800 bg-slate-950/75 md:grid-cols-[300px_1fr]">
+    <div className="grid min-h-[min(620px,78dvh)] overflow-hidden rounded-xl border border-slate-800 bg-slate-950/75 md:min-h-[620px] md:grid-cols-[300px_minmax(0,1fr)]">
       <aside className="flex flex-col border-b border-slate-800 md:border-b-0 md:border-r">
         <div className="flex items-center justify-between border-b border-slate-800 p-4">
           <div className="flex items-center gap-2 text-white">
@@ -351,7 +351,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ user }) => {
         </div>
       </aside>
 
-      <section className="flex min-h-[520px] flex-col">
+      <section className="flex min-h-[min(520px,65dvh)] min-w-0 flex-col md:min-h-[520px]">
         {activeFriendUid ? (
           <>
             <header className="flex items-center gap-3 border-b border-slate-800 px-5 py-3">
@@ -360,7 +360,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ user }) => {
                 <h3 className="truncate text-sm font-semibold text-white">{activeFriend?.nickname || 'Student'}</h3>
                 <p className="truncate font-mono text-[10px] text-slate-500">{activeFriendUid}</p>
               </div>
-              <span className="text-[11px] text-slate-500">Profile visible to friends</span>
+              <span className="hidden text-[11px] text-slate-500 sm:inline">Profile visible to friends</span>
               <button onClick={() => setIsReportOpen((open) => !open)} title="Report profile or chat" aria-label="Report profile or chat" className="rounded-md p-2 text-slate-400 hover:bg-rose-950/50 hover:text-rose-300"><Flag className="h-4 w-4" /></button>
             </header>
 
