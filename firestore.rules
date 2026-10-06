@@ -28,6 +28,10 @@ service cloud.firestore {
       match /course_grades/{gradeId} {
         allow read, write: if isOwner(uid);
       }
+
+      match /deadline_reminders/{reminderId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     match /public_profiles/{uid} {
@@ -75,7 +79,14 @@ service cloud.firestore {
     }
 
     match /conversations/{conversationId} {
-      allow get, list: if signedIn() && request.auth.uid in resource.data.participants;
+      allow get: if signedIn() && (
+        exists(/databases/$(database)/documents/conversations/$(conversationId))
+          ? request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          : exists(/databases/$(database)/documents/friendships/$(conversationId))
+            && get(/databases/$(database)/documents/friendships/$(conversationId)).data.status == 'accepted'
+            && request.auth.uid in get(/databases/$(database)/documents/friendships/$(conversationId)).data.participants
+      );
+      allow list: if signedIn() && request.auth.uid in resource.data.participants;
 
       allow create: if signedIn()
         && request.resource.data.participants is list

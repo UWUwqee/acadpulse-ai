@@ -9,6 +9,13 @@ export function normalizeDueDate(value?: string | null): string {
   return parsed.toISOString();
 }
 
+export function isWithinReminderWindow(dueDate: string, now = Date.now()): boolean {
+  if (!dueDate) return false;
+  const dueTime = new Date(dueDate).getTime();
+  const remainingMs = dueTime - now;
+  return Number.isFinite(dueTime) && remainingMs > 0 && remainingMs <= 24 * 60 * 60 * 1000;
+}
+
 export function formatDateTime(isoString: string): string {
   if (!isoString) return '';
   const d = new Date(isoString);

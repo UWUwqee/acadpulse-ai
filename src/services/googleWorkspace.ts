@@ -140,3 +140,49 @@ export async function detectAllPendingActivities(token: string): Promise<{
 export async function debugGoogleWorkspaceSync(token: string) {
   return proxyGoogleRequest('/api/google/debug', token);
 }
+
+function encodeBase64Utf8(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+
+export async function sendDeadlineReminderEmail(
+  token: string,
+  email: string,
+  title: string,
+  subjectCode: string,
+  dueDate: string
+): Promise<void> {
+  const subject = `Reminder: ${title} is due tomorrow`;
+  const body = [
+    `Your activity "${title}" is due in about one day.`,
+    subjectCode ? `Course: ${subjectCode}` : '',
+    `Due: ${new Date(dueDate).toLocaleString()}`,
+    'Open AcadPulse to review your activity.',
+  ].filter(Boolean).join('\n');
+  const mimeMessage = [
+    `To: ${email}`,
+    `Subject: =?UTF-8?B?${encodeBase64Utf8(subject)}?=`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    encodeBase64Utf8(body),
+  ].join('\r\n');
+  const raw = btoa(mimeMessage).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ raw }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error?.message || 'Gmail could not send the reminder.');
+  }
+}

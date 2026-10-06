@@ -10,6 +10,7 @@ interface ToolsViewProps {
   user: User;
   tasks: AcademicTask[];
   subjects: Subject[];
+  reminderError: string;
 }
 
 interface StudyBlock {
@@ -19,13 +20,7 @@ interface StudyBlock {
   focusStrategy: string;
 }
 
-const notificationOptions = [
-  { value: 24, label: '1 day before' },
-  { value: 3, label: '3 hours before' },
-  { value: 1, label: '1 hour before' },
-];
-
-export const ToolsView: React.FC<ToolsViewProps> = ({ user, tasks, subjects }) => {
+export const ToolsView: React.FC<ToolsViewProps> = ({ user, tasks, subjects, reminderError }) => {
   const [grades, setGrades] = useState<Record<string, CourseGrade>>({});
   const [studyBlocks, setStudyBlocks] = useState<StudyBlock[]>([]);
   const [studySummary, setStudySummary] = useState('');
@@ -48,32 +43,6 @@ export const ToolsView: React.FC<ToolsViewProps> = ({ user, tasks, subjects }) =
       setGrades(nextGrades);
     });
   }, [user.uid]);
-
-  useEffect(() => {
-    if (!remindersEnabled || notificationPermission !== 'granted') return;
-
-    const notifyUpcoming = () => {
-      const now = Date.now();
-      for (const task of activeTasks) {
-        if (!task.dueDate) continue;
-        const dueTime = new Date(task.dueDate).getTime();
-        const remainingMs = dueTime - now;
-        if (remainingMs <= 0 || remainingMs > reminderHours * 60 * 60 * 1000) continue;
-        const reminderKey = `acadpulse:reminded:${user.uid}:${task.id}:${task.dueDate}:${reminderHours}`;
-        if (localStorage.getItem(reminderKey)) continue;
-        const subject = subjects.find((item) => item.id === task.subjectId);
-        new Notification(`Upcoming: ${task.title}`, {
-          body: `${subject?.code || 'Course'} · ${getCountdown(task.dueDate).label}`,
-          tag: reminderKey,
-        });
-        localStorage.setItem(reminderKey, 'sent');
-      }
-    };
-
-    notifyUpcoming();
-    const timer = window.setInterval(notifyUpcoming, 60_000);
-    return () => window.clearInterval(timer);
-  }, [activeTasks, notificationPermission, reminderHours, remindersEnabled, subjects, user.uid]);
 
   const handleGeneratePlan = async () => {
     setPlannerLoading(true);
@@ -135,6 +104,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({ user, tasks, subjects }) =
     if (permission === 'granted') {
       setRemindersEnabled(true);
       localStorage.setItem(`acadpulse:reminders:${user.uid}`, 'enabled');
+      window.dispatchEvent(new Event('acadpulse:reminder-settings-changed'));
     }
   };
 
@@ -142,6 +112,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({ user, tasks, subjects }) =
     const enabled = !remindersEnabled;
     setRemindersEnabled(enabled);
     localStorage.setItem(`acadpulse:reminders:${user.uid}`, enabled ? 'enabled' : 'disabled');
+    window.dispatchEvent(new Event('acadpulse:reminder-settings-changed'));
     if (enabled && notificationPermission !== 'granted') void enableReminders();
   };
 
@@ -188,16 +159,13 @@ export const ToolsView: React.FC<ToolsViewProps> = ({ user, tasks, subjects }) =
 
         <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
           <div className="flex items-center gap-2"><BellRing className="h-5 w-5 text-amber-300" /><h3 className="font-semibold text-white">Deadline reminders</h3></div>
-          <p className="mt-2 text-sm text-slate-400">Browser notifications for activities approaching their due date. The site must be open.</p>
+          <p className="mt-2 text-sm text-slate-400">Get a browser notification and an email 1 day before an activity is due. AcadPulse must be open and signed in to check deadlines.</p>
           <label className="mt-4 flex items-center justify-between gap-3 rounded-md border border-slate-800 bg-slate-950 p-3">
-            <span><span className="block text-sm font-medium text-white">Enable reminders</span><span className="block text-xs text-slate-500">Permission: {notificationPermission}</span></span>
+            <span><span className="block text-sm font-medium text-white">Enable reminders</span><span className="block text-xs text-slate-500">Browser permission: {notificationPermission}</span></span>
             <input type="checkbox" checked={remindersEnabled} onChange={toggleReminders} className="h-4 w-4 accent-indigo-500" />
           </label>
-          <label className="mt-3 block text-xs font-medium text-slate-300">Notify me
-            <select value={reminderHours} onChange={(event) => setReminderLead(Number(event.target.value))} className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white">
-              {notificationOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-          </label>
+          <p className="mt-3 text-xs text-slate-500">Gmail destination: {user.email || 'No email on this account'}</p>
+          {reminderError && <p className="mt-2 text-xs text-rose-300">Email reminder failed: {reminderError} Sign out and back in if Gmail access was just enabled.</p>}
           {notificationPermission === 'denied' && <p className="mt-2 text-xs text-rose-300">Notifications are blocked by the browser. Enable them in site settings to use reminders.</p>}
         </div>
       </section>

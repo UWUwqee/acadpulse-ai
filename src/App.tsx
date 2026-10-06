@@ -19,6 +19,9 @@ import { ChatView } from './components/ChatView';
 import { ToolsView } from './components/ToolsView';
 import { ensurePublicProfile } from './services/socialService';
 import { getInstitutionInfo } from './utils/institutionHelper';
+import { isWithinReminderWindow, getCountdown } from './utils/dateUtils';
+import { claimDeadlineReminderEmail, markDeadlineReminderEmailFailed, markDeadlineReminderEmailSent } from './services/deadlineReminders';
+import { sendDeadlineReminderEmail } from './services/googleWorkspace';
 import { AcademicTask, Subject, AcademicResource } from './types';
 import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 
@@ -29,6 +32,7 @@ export default function App() {
   const [isAutoDetecting, setIsAutoDetecting] = useState(false);
   const [detectStatusMessage, setDetectStatusMessage] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [reminderError, setReminderError] = useState('');
 
   const {
     subjects,
@@ -98,6 +102,54 @@ export default function App() {
       setLastSyncedAt(null);
     }
   }, [currentUser?.uid]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    let checkingReminders = false;
+    const checkReminders = async () => {
+      if (checkingReminders || localStorage.getItem(`acadpulse:reminders:${currentUser.uid}`) !== 'enabled') return;
+      checkingReminders = true;
+      const now = Date.now();
+      try {
+        for (const task of tasks) {
+          if (task.status === 'completed' || !isWithinReminderWindow(task.dueDate, now)) continue;
+          const reminderKey = `acadpulse:reminded:${currentUser.uid}:${task.id}:${task.dueDate}`;
+          const subject = subjects.find((item) => item.id === task.subjectId);
+
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && !localStorage.getItem(reminderKey)) {
+            new Notification(`Upcoming: ${task.title}`, {
+              body: `${subject?.code || 'Course'} · Due ${getCountdown(task.dueDate).label}`,
+              tag: reminderKey,
+            });
+            localStorage.setItem(reminderKey, 'sent');
+          }
+
+          if (!accessToken || !currentUser.email) continue;
+          const claimed = await claimDeadlineReminderEmail(currentUser.uid, task, now);
+          if (!claimed) continue;
+          try {
+            await sendDeadlineReminderEmail(accessToken, currentUser.email, task.title, subject?.code || '', task.dueDate);
+            await markDeadlineReminderEmailSent(currentUser.uid, task);
+            setReminderError('');
+          } catch (error) {
+            await markDeadlineReminderEmailFailed(currentUser.uid, task, error);
+            setReminderError(error instanceof Error ? error.message : 'Gmail could not send the reminder.');
+          }
+        }
+      } finally {
+        checkingReminders = false;
+      }
+    };
+
+    void checkReminders();
+    const timer = window.setInterval(() => void checkReminders(), 60_000);
+    window.addEventListener('acadpulse:reminder-settings-changed', checkReminders);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('acadpulse:reminder-settings-changed', checkReminders);
+    };
+  }, [accessToken, currentUser, subjects, tasks]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -509,7 +561,7 @@ export default function App() {
             )}
 
             {activeTab === 'tools' && (
-              <ToolsView user={currentUser} tasks={tasks} subjects={subjects} />
+              <ToolsView user={currentUser} tasks={tasks} subjects={subjects} reminderError={reminderError} />
             )}
 
             {activeTab === 'chat' && (

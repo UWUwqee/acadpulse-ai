@@ -26,6 +26,7 @@ export const WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
   'https://www.googleapis.com/auth/tasks.readonly',
   'https://www.googleapis.com/auth/calendar.events.readonly',
+  'https://www.googleapis.com/auth/gmail.send',
 ];
 
 WORKSPACE_SCOPES.forEach((scope) => googleAuthProvider.addScope(scope));
