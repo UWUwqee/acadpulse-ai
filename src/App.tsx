@@ -338,10 +338,11 @@ export default function App() {
           </div>
         </main>
 
-        <footer className="border-t border-slate-900 bg-slate-950/80 py-5 text-center text-[11px] text-slate-500">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 sm:flex-row">
-            <div>AcadPulse-AI · Real-time Academic Resource & Workload Management System</div>
-            <div>Built for college & university students across all institutional domains</div>
+        <footer className="border-t border-slate-900 bg-slate-950/80 py-4 text-center text-[11px] text-slate-500">
+          <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4">
+            <span>AcadPulse-AI</span>
+            <span className="text-slate-700">•</span>
+            <span>Built for students</span>
           </div>
         </footer>
       </div>
