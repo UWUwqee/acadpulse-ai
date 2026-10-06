@@ -47,10 +47,10 @@ export function getCountdown(isoString: string): {
   if (diffMs < 0) {
     const overdueHours = Math.abs(Math.round(diffMs / (1000 * 60 * 60)));
     if (overdueHours < 24) {
-      return { label: `Overdue by ${overdueHours}h`, isOverdue: true, isUrgent: true };
+      return { label: `Overdue by ${overdueHours}h`, isOverdue: true, isUrgent: false };
     }
     const overdueDays = Math.round(overdueHours / 24);
-    return { label: `Overdue by ${overdueDays}d`, isOverdue: true, isUrgent: true };
+    return { label: `Overdue by ${overdueDays}d`, isOverdue: true, isUrgent: false };
   }
 
   const diffHours = Math.round(diffMs / (1000 * 60 * 60));
