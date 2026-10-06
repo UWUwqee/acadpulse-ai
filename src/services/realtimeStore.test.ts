@@ -52,6 +52,7 @@ test('missing activities are counted as missing and not urgent', () => {
   }];
 
   const overdueMetrics = realtimeStore.calculateWorkloadMetrics();
+  assert.equal(overdueMetrics.missingCount, 1);
   assert.equal(overdueMetrics.urgentCount, 0);
 
   (realtimeStore as any).tasks = originalTasks;

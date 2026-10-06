@@ -503,6 +503,11 @@ class RealtimeStoreManager {
         return;
       }
 
+      if (dueTime < nowTime) {
+        missingCount++;
+        return;
+      }
+
       const diffHours = (dueTime - nowTime) / (1000 * 60 * 60);
       const isFutureDeadline = diffHours > 0;
       const isUrgentByDeadline = isFutureDeadline && diffHours <= 48;
