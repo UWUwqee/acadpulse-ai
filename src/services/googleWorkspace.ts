@@ -145,17 +145,27 @@ export async function fetchClassroomActivities(
 
       // Fetch coursework for each course
       try {
-        const cwRes = await fetch(
-          `https://classroom.googleapis.com/v1/courses/${c.id}/courseWork?courseWorkStates=PUBLISHED`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
+        const courseWorkStates = ['PUBLISHED', 'ASSIGNED', 'DRAFT'];
+        let courseWorks: any[] = [];
+
+        for (const state of courseWorkStates) {
+          const cwRes = await fetch(
+            `https://classroom.googleapis.com/v1/courses/${c.id}/courseWork?courseWorkStates=${state}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          if (!cwRes.ok) {
+            continue;
           }
-        );
 
-        if (cwRes.ok) {
           const cwData = await cwRes.json();
-          const courseWorks = cwData.courseWork || [];
+          const stateCourseWorks = cwData.courseWork || [];
+          courseWorks = [...courseWorks, ...stateCourseWorks];
+        }
 
+        if (courseWorks.length > 0) {
           for (const cw of courseWorks) {
             // Check student submission status using userId=me
             let isSubmitted = false;
@@ -171,8 +181,12 @@ export async function fetchClassroomActivities(
                 const userSubmission = (subData.studentSubmissions || [])[0];
                 if (
                   userSubmission &&
-                  (userSubmission.state === 'TURNED_IN' ||
-                    userSubmission.state === 'RETURNED')
+                  [
+                    'TURNED_IN',
+                    'RETURNED',
+                    'LATE_TURNED_IN',
+                    'RECLAIMED_BY_STUDENT',
+                  ].includes(userSubmission.state)
                 ) {
                   isSubmitted = true;
                 }
@@ -347,7 +361,7 @@ export async function fetchGoogleTasksActivities(
 
         try {
           const tasksRes = await fetch(
-            `https://tasks.googleapis.com/tasks/v1/lists/${list.id}/tasks?showCompleted=false`,
+            `https://tasks.googleapis.com/tasks/v1/lists/${list.id}/tasks?showCompleted=true`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }

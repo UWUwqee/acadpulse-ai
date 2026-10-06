@@ -146,11 +146,6 @@ service cloud.firestore {
                   ? 'Firestore Live onSnapshot Connected'
                   : 'Instant Reactive In-Memory Bus Active'}
               </div>
-              <div className="text-[11px] text-slate-400">
-                {connectionStatus.isConnected
-                  ? 'Data syncs remotely across all clients in real time.'
-                  : 'Zero-refresh updates enabled with multi-tab instant reactivity.'}
-              </div>
             </div>
           </div>
 

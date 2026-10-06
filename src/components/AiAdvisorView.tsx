@@ -88,13 +88,9 @@ export const AiAdvisorView: React.FC<AiAdvisorViewProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-5 h-5 text-indigo-400" />
             <h2 className="text-lg font-bold text-white tracking-tight">
-              AI-Driven Workload Prioritization & Metacognitive Balancer
+              AI Workload Advisor
             </h2>
           </div>
-          <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
-            Continuously analyzes academic deadlines, estimated study hours, and course weights using
-            Gemini to optimize study allocation and mitigate burnout.
-          </p>
         </div>
 
         <button
@@ -248,10 +244,6 @@ export const AiAdvisorView: React.FC<AiAdvisorViewProps> = ({
             <div className="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-8 text-center space-y-3">
               <Sparkles className="w-8 h-8 text-indigo-400 mx-auto" />
               <h4 className="text-sm font-bold text-white">Ready for AI Workload Analysis</h4>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Click "Run Real-Time AI Analysis" to assess your academic schedule, compute cognitive
-                strain, and receive adaptive study recommendations.
-              </p>
               <button
                 onClick={handleRunAiAnalysis}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-md transition-colors cursor-pointer"
