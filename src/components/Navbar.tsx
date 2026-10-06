@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Database, Sparkles, LogOut } from 'lucide-react';
 import { User } from 'firebase/auth';
+import { BrandMark } from './BrandMark';
 
 interface NavbarProps {
   activeTab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses';
@@ -30,9 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Zone 1: Brand Wordmark */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 text-white font-bold text-sm tracking-tighter">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
+          <BrandMark size="sm" />
           <button
             onClick={() => setActiveTab('tasks')}
             className="text-base sm:text-lg font-bold tracking-tight text-white hover:text-indigo-400 transition-colors cursor-pointer text-left"

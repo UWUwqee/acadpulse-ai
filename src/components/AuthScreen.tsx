@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import { User } from 'firebase/auth';
 import { googleSignIn } from '../services/googleWorkspace';
-import {
-  Sparkles,
-  Loader2,
-  AlertCircle,
-  GraduationCap,
-  Briefcase,
-} from 'lucide-react';
+import { BrandMark } from './BrandMark';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 interface AuthScreenProps {
   onLoginSuccess: (user: User, token: string) => Promise<void> | void;
@@ -45,9 +40,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
       <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4 py-10">
         <div className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-indigo-950/20 backdrop-blur-xl">
           <div className="mb-6 flex items-center justify-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/30">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
+            <BrandMark size="lg" />
             <div>
               <div className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Welcome</div>
               <div className="text-2xl font-bold text-white">AcadPulse-AI</div>
