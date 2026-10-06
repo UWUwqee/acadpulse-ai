@@ -1,0 +1,8 @@
+{
+  "name": "AI Academic Resource and Workload Management System",
+  "description": "Real-time academic resource repository, deadline tracker, and AI-driven workload management system for college students.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

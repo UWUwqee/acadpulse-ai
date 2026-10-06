@@ -1,0 +1,19 @@
+{
+  "short_name": "AcadPulse-AI",
+  "name": "AcadPulse-AI - Academic Workload Management",
+  "description": "Real-time academic resource repository, deadline tracker, and AI-driven workload management system for college students.",
+  "id": "academicai.app",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#070b13",
+  "background_color": "#070b13",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["education", "productivity"]
+}
