@@ -55,6 +55,7 @@ export interface WorkloadAnalysis {
   workloadScore: number;
   statusLabel: 'Optimal' | 'Manageable' | 'Heavy' | 'Overloaded';
   urgentCount: number;
+  missingCount: number;
   totalPendingHours: number;
   burnoutRisk: 'Low' | 'Moderate' | 'High';
   studyRecommendations: string[];

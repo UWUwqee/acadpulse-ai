@@ -1,6 +1,6 @@
 import React from 'react';
 import { WorkloadAnalysis, AcademicTask } from '../types';
-import { AlertTriangle, Clock, GraduationCap, CheckCircle, Sparkles } from 'lucide-react';
+import { AlertTriangle, Clock, GraduationCap, CheckCircle, Sparkles, CircleAlert } from 'lucide-react';
 
 interface WorkloadMetricsBarProps {
   metrics: WorkloadAnalysis;
@@ -31,7 +31,7 @@ export const WorkloadMetricsBar: React.FC<WorkloadMetricsBarProps> = ({
 
   return (
     <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-4 sm:p-5 mb-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 items-center">
+      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-5 gap-4 items-center">
         {/* Metric 1: Workload Stress Index */}
         <div className="col-span-2 sm:col-span-1">
           <div className="text-xs font-medium text-slate-400 mb-1">Workload Stress Index</div>
@@ -81,13 +81,24 @@ export const WorkloadMetricsBar: React.FC<WorkloadMetricsBarProps> = ({
         </div>
 
         {/* Metric 4: Upcoming Exams / Quizzes */}
-        <div className="hidden md:block border-l border-slate-800 pl-4">
+        <div className="border-l border-slate-800 pl-4">
           <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5 mb-1">
             <GraduationCap className="w-3.5 h-3.5 text-cyan-400" />
             <span>Exams & Quizzes</span>
           </div>
           <div className="text-2xl font-bold font-mono tabular-nums text-white">
             {examCount}
+          </div>
+        </div>
+
+        {/* Metric 5: Missing / Unscheduled Activity */}
+        <div className="border-l border-slate-800 pl-4">
+          <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5 mb-1">
+            <CircleAlert className={`w-3.5 h-3.5 ${metrics.missingCount > 0 ? 'text-rose-400' : 'text-slate-500'}`} />
+            <span>Missing Activity</span>
+          </div>
+          <div className="text-2xl font-bold font-mono tabular-nums text-white">
+            {metrics.missingCount}
           </div>
         </div>
 

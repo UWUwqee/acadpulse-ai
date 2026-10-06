@@ -124,24 +124,36 @@ export default function App() {
       await debugGoogleWorkspaceSync(token);
       const result = await detectAllPendingActivities(token);
 
-      if (result.courses.length > 0 || result.activities.length > 0) {
+      const visibleCourses = (result.courses || []).filter((course) => {
+        const name = course.name.toLowerCase();
+        return !['my tasks', 'tasks', 'google tasks', 'google tasks / connected apps'].includes(name.trim());
+      });
+
+      const visibleActivities = (result.activities || []).filter((act) => {
+        const name = (act.courseName || '').toLowerCase();
+        return !['my tasks', 'tasks', 'google tasks', 'google tasks / connected apps'].includes(name.trim());
+      });
+
+      if (visibleCourses.length > 0 || visibleActivities.length > 0) {
         setDetectStatusMessage(
-          `Importing ${result.courses.length} courses/lists and ${result.activities.length} pending activities...`
+          `Importing ${visibleCourses.length} courses/lists and ${visibleActivities.length} pending activities...`
         );
-        
-        const formattedTasks: Omit<AcademicTask, 'id' | 'createdAt'>[] = result.activities.map((act) => {
-          const matchedCourse = result.courses.find(
+
+        const formattedTasks: Omit<AcademicTask, 'id' | 'createdAt'>[] = visibleActivities.map((act) => {
+          const matchedCourse = visibleCourses.find(
             (c) => c.name.toLowerCase() === act.courseName.toLowerCase() || c.code === act.courseCode
           );
-          const courseId = matchedCourse ? matchedCourse.id : (result.courses[0]?.id || subjects[0]?.id || 'sub-1');
+          const courseId = matchedCourse ? matchedCourse.id : (visibleCourses[0]?.id || subjects[0]?.id || 'sub-1');
+
+          const dueDate = act.dueDate && !Number.isNaN(new Date(act.dueDate).getTime()) ? act.dueDate : '';
 
           return {
             title: act.title,
             subjectId: courseId,
             type: act.type,
-            dueDate: act.dueDate,
+            dueDate,
             estimatedHours: act.estimatedHours,
-            priority: 'urgent',
+            priority: dueDate ? 'urgent' : 'medium',
             status: act.status,
             subtasks: [
               {
@@ -159,7 +171,7 @@ export default function App() {
           };
         });
 
-        await handleSyncActivities(result.courses, formattedTasks);
+        await handleSyncActivities(visibleCourses, formattedTasks);
       }
     } catch (err) {
       console.warn('Auto detection notice on login:', err);

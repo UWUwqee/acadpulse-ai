@@ -96,31 +96,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Zone 3: Primary Actions & Live Sync Toggle */}
+        {/* Zone 3: Primary Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Real-time Connection Indicator */}
-          <button
-            onClick={onOpenFirebaseModal}
-            title={
-              connectionStatus.isConnected
-                ? 'Connected to live Firestore onSnapshot listeners'
-                : 'Running live instant in-memory reactive sync. Click to configure Firestore.'
-            }
-            className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md border border-slate-700/80 bg-slate-900/90 text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                connectionStatus.isConnected
-                  ? 'bg-emerald-400 animate-pulse'
-                  : 'bg-cyan-400 animate-pulse'
-              }`}
-            />
-            <span className="hidden sm:inline">
-              {connectionStatus.isConnected ? 'Firestore Live' : 'Instant Reactive'}
-            </span>
-            <Database className="w-3 h-3 text-slate-400 ml-0.5" />
-          </button>
-
           {/* New Deliverable Button */}
           <button
             onClick={onOpenNewTask}

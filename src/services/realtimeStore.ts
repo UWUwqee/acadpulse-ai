@@ -485,6 +485,7 @@ class RealtimeStoreManager {
     const nowTime = new Date().getTime();
 
     let urgentCount = 0;
+    let missingCount = 0;
     let totalPendingHours = 0;
     let examWeightScore = 0;
 
@@ -492,7 +493,14 @@ class RealtimeStoreManager {
 
     pendingTasks.forEach((task) => {
       totalPendingHours += task.estimatedHours || 2;
-      const dueTime = new Date(task.dueDate).getTime();
+      const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+      const dueTime = dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.getTime() : null;
+
+      if (!dueTime) {
+        missingCount++;
+        return;
+      }
+
       const diffHours = (dueTime - nowTime) / (1000 * 60 * 60);
 
       if (diffHours <= 48 || task.priority === 'urgent') {
@@ -555,6 +563,7 @@ class RealtimeStoreManager {
       workloadScore: calculatedScore,
       statusLabel,
       urgentCount,
+      missingCount,
       totalPendingHours: Math.round(totalPendingHours * 10) / 10,
       burnoutRisk,
       studyRecommendations: recommendations,
