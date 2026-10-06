@@ -4,6 +4,7 @@ import { AcademicTask, CourseGrade, Subject } from '../types';
 import { db } from '../services/firebase';
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { getCountdown } from '../utils/dateUtils';
+import { recordSystemEvent } from '../services/adminService';
 import { BellRing, BookOpenCheck, CalendarClock, CheckCircle2, Clock3, Loader2, Target } from 'lucide-react';
 
 interface ToolsViewProps {
@@ -53,8 +54,11 @@ export const ToolsView: React.FC<ToolsViewProps> = ({ user, tasks, subjects, rem
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tasks: activeTasks, subjects }),
       });
-      if (!response.ok) throw new Error('Could not generate the study plan. Try again.');
       const result = await response.json();
+      if (!response.ok) throw new Error(result.error || result.details || 'Could not generate the study plan. Try again.');
+      if (result.fallback) {
+        void recordSystemEvent(user, 'ai_fallback', 'Gemini was unavailable while generating a study plan.').catch(() => {});
+      }
       const subjectNames = new Map(subjects.map((subject) => [subject.code, subject.name]));
       const generatedBlocks = Array.isArray(result.studySchedule)
         ? result.studySchedule as StudyBlock[]

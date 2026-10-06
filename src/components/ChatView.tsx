@@ -15,7 +15,8 @@ import {
   toggleMessageReaction,
   respondToFriendRequest,
 } from '../services/socialService';
-import { Check, CheckCheck, ImagePlus, MessageCircle, Plus, Send, Settings, UserPlus, Users, X } from 'lucide-react';
+import { submitUserReport } from '../services/adminService';
+import { Check, CheckCheck, Flag, ImagePlus, MessageCircle, Plus, Send, Settings, UserPlus, Users, X } from 'lucide-react';
 
 interface ChatViewProps {
   user: User;
@@ -59,6 +60,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ user }) => {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportCategory, setReportCategory] = useState('Harassment or abuse');
+  const [reportDetails, setReportDetails] = useState('');
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -240,6 +244,33 @@ export const ChatView: React.FC<ChatViewProps> = ({ user }) => {
     }
   };
 
+  const handleReport = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!activeFriendUid || reportDetails.trim().length < 8) {
+      setError('Add at least 8 characters describing the concern.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      await submitUserReport({
+        reporterUid: user.uid,
+        targetUid: activeFriendUid,
+        targetNickname: activeFriend?.nickname || 'Student',
+        ...(activeConversationId ? { conversationId: activeConversationId } : {}),
+        category: reportCategory,
+        details: reportDetails.trim(),
+      });
+      setReportDetails('');
+      setIsReportOpen(false);
+      setNotice('Report submitted for review.');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not submit the report.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const activeFriend = activeFriendUid ? friendProfiles[activeFriendUid] : null;
 
   return (
@@ -330,7 +361,19 @@ export const ChatView: React.FC<ChatViewProps> = ({ user }) => {
                 <p className="truncate font-mono text-[10px] text-slate-500">{activeFriendUid}</p>
               </div>
               <span className="text-[11px] text-slate-500">Profile visible to friends</span>
+              <button onClick={() => setIsReportOpen((open) => !open)} title="Report profile or chat" aria-label="Report profile or chat" className="rounded-md p-2 text-slate-400 hover:bg-rose-950/50 hover:text-rose-300"><Flag className="h-4 w-4" /></button>
             </header>
+
+            {isReportOpen && <form onSubmit={(event) => void handleReport(event)} className="space-y-2 border-b border-slate-800 bg-slate-900/70 p-4">
+              <div className="flex items-center justify-between"><h4 className="text-sm font-semibold text-white">Report profile or chat</h4><button type="button" onClick={() => setIsReportOpen(false)} aria-label="Close report form" className="rounded p-1 text-slate-400 hover:bg-slate-800"><X className="h-4 w-4" /></button></div>
+              <div className="grid gap-2 sm:grid-cols-[190px_1fr]">
+                <select value={reportCategory} onChange={(event) => setReportCategory(event.target.value)} className={styles.field}>
+                  <option>Harassment or abuse</option><option>Spam</option><option>Impersonation</option><option>Other safety concern</option>
+                </select>
+                <textarea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} minLength={8} maxLength={1000} rows={2} placeholder="Describe the concern" className={`${styles.field} resize-y`} />
+              </div>
+              <div className="flex justify-end"><button type="submit" disabled={busy || reportDetails.trim().length < 8} className="rounded-md bg-rose-800 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50">Submit report</button></div>
+            </form>}
 
             <div className="flex-1 space-y-3 overflow-y-auto p-5">
               {messages.length === 0 ? (

@@ -35,59 +35,51 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-[#040b17] text-slate-100 overflow-hidden relative select-none">
-      <style>{`
-        @keyframes float-slow {
-          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(0, -18px, 0) scale(1.08); }
-        }
-        @keyframes float-delayed {
-          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(18px, -22px, 0) scale(1.12); }
-        }
-        @keyframes grid-shift {
-          0% { transform: perspective(1200px) rotateX(68deg) translateY(0); }
-          50% { transform: perspective(1200px) rotateX(68deg) translateY(18px); }
-          100% { transform: perspective(1200px) rotateX(68deg) translateY(0); }
-        }
-      `}</style>
-
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-20 left-[-8%] h-72 w-72 rounded-full bg-indigo-500/25 blur-3xl animate-[float-slow_18s_ease-in-out_infinite]" />
-        <div className="absolute top-[18%] right-[-6%] h-96 w-96 rounded-full bg-violet-500/18 blur-3xl animate-[float-delayed_26s_ease-in-out_infinite]" />
-        <div className="absolute bottom-[-12%] left-[20%] h-80 w-80 rounded-full bg-amber-400/12 blur-3xl animate-[float-slow_22s_ease-in-out_infinite]" />
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] [background-size:130px_130px] [transform:perspective(1500px)_rotateX(68deg)] animate-[grid-shift_24s_ease-in-out_infinite]" />
+        <div className="motion-grid absolute inset-0" />
+        <div className="motion-scan absolute left-0 top-[26%] h-px w-full" />
+        <div className="motion-scan motion-scan-late absolute left-0 top-[70%] h-px w-full" />
       </div>
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.14),_transparent_25%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.04),transparent_40%,rgba(255,255,255,0.02))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_14%_44%,rgba(34,211,238,0.10),transparent_38%),radial-gradient(ellipse_at_82%_20%,rgba(245,158,11,0.10),transparent_34%)]" />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4 py-10">
-        <div className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-indigo-950/20 backdrop-blur-xl">
-          <div className="mb-6 flex items-center justify-center gap-3">
+      <main className="relative z-10 mx-auto grid min-h-screen w-full max-w-6xl grid-cols-1 items-center gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-16 lg:px-12">
+        <section className="motion-stage-1 hidden lg:block">
+          <div className="flex items-center gap-3">
             <BrandMark size="lg" />
             <div>
-              <div className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Welcome</div>
-              <div className="text-2xl font-bold bg-gradient-to-r from-[#f9f6df] via-[#f0d98b] to-[#d7a857] bg-clip-text text-transparent">
-                AcadPulse-AI
-              </div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-200/70">Academic planner</div>
+              <div className="text-xl font-bold text-[#f0d98b]">AcadPulse-AI</div>
             </div>
           </div>
+          <div className="mt-16 max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/80">Make room for the work that matters</p>
+            <h1 className="mt-4 text-5xl font-semibold leading-[1.08] text-white">Your semester,<br /><span className="text-cyan-200">in clear focus.</span></h1>
+            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-300">Bring coursework, deadlines, and study time into one considered workspace.</p>
+          </div>
+          <div className="mt-14 flex max-w-lg items-center gap-4 border-t border-slate-700/70 pt-5 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
+            <span>Coursework</span><span className="h-px flex-1 bg-gradient-to-r from-cyan-300/70 to-amber-300/70" /><span>Deadlines</span><span className="h-px flex-1 bg-gradient-to-r from-amber-300/70 to-cyan-300/70" /><span>Progress</span>
+          </div>
+        </section>
 
-          <div className="mb-5 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Plan smarter.</h1>
-            <p className="mt-2 text-sm text-slate-300">School tasks, deadlines, and study load in one place.</p>
+        <section className="motion-stage-2 w-full max-w-md justify-self-center rounded-2xl border border-slate-700/80 bg-slate-950/75 p-6 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8 lg:justify-self-end">
+          <div className="mb-6 flex items-center gap-3 lg:hidden">
+            <BrandMark size="md" />
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">Welcome</div>
+              <div className="text-xl font-bold text-[#f0d98b]">AcadPulse-AI</div>
+            </div>
+          </div>
+          <div className="mb-6">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-200/70">Welcome</div>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Sign in to continue</h2>
+            <p className="mt-2 text-sm text-slate-400">School tasks, deadlines, and study load in one place.</p>
           </div>
 
-          <div className="mb-5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-300">
-            <span className="rounded-full border border-slate-700 bg-slate-950/80 px-2.5 py-1.5">
-              Classroom
-            </span>
-            <span className="rounded-full border border-slate-700 bg-slate-950/80 px-2.5 py-1.5">
-              Calendar
-            </span>
-            <span className="rounded-full border border-slate-700 bg-slate-950/80 px-2.5 py-1.5">
-              Tasks
-            </span>
+          <div className="mb-6 flex flex-wrap gap-2 text-[11px] text-slate-300">
+            <span className="rounded border border-slate-700 bg-slate-900/80 px-2.5 py-1.5">Classroom</span>
+            <span className="rounded border border-slate-700 bg-slate-900/80 px-2.5 py-1.5">Calendar</span>
+            <span className="rounded border border-slate-700 bg-slate-900/80 px-2.5 py-1.5">Tasks</span>
           </div>
 
           {errorMsg && (
@@ -102,8 +94,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
           <button
             onClick={handleLogin}
             disabled={isLoggingIn}
-            className="w-full rounded-2xl bg-white text-slate-900 px-4 py-3.5 text-sm font-semibold shadow-lg shadow-slate-200/10 transition hover:bg-slate-100 disabled:opacity-70"
+            className="group relative w-full overflow-hidden rounded-lg border border-cyan-100/70 bg-[#f1eee5] px-4 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-black/20 transition duration-300 hover:-translate-y-0.5 hover:bg-white disabled:translate-y-0 disabled:opacity-70"
           >
+            <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 skew-x-[-18deg] bg-white/55 transition-transform duration-700 group-hover:translate-x-[420%]" />
             <span className="flex items-center justify-center gap-3">
               {isLoggingIn ? (
                 <Loader2 className="h-5 w-5 animate-spin text-slate-700" />
@@ -123,8 +116,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
               <span>{isLoggingIn ? 'Connecting...' : 'Continue with Google'}</span>
             </span>
           </button>
-        </div>
-      </div>
+          <p className="mt-4 text-center text-[11px] text-slate-500">Secure sign-in with your Google account</p>
+        </section>
+      </main>
     </div>
   );
 };

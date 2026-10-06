@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { createWorkloadFallback } from '../src/utils/workloadAdvisor';
 
 const parseBody = async (req: any) => {
   if (!req) return {};
@@ -387,18 +388,9 @@ const handleAiRoute = async (req: any, res: any, route: string) => {
       }
 
       if (!ai) {
-        const urgentTasks = tasks.filter((task: any) => task.priority === 'urgent' || task.status === 'in_progress');
-        return res.status(200).json({
-          prioritizedTaskIds: urgentTasks.map((task: any) => task.id),
-          burnoutRisk: tasks.length > 5 ? 'Moderate' : 'Low',
-          workloadFactor: Math.min(100, tasks.length * 15),
-          summary: `Prioritizing ${urgentTasks.length} urgent tasks based on imminent deadline heuristics.`,
-          actionableSteps: [
-            'Complete nearest deliverable within a dedicated 2-hour morning block.',
-            'Review upcoming exam materials with spaced repetition.',
-          ],
-        });
+        return res.status(200).json(createWorkloadFallback(tasks, subjects));
       }
+
 
       const prompt = `You are an expert academic advisor and workload management AI for college students. Analyze the following student academic workload and provide intelligent prioritization and study recommendations: Subjects: ${JSON.stringify(subjects, null, 2)} Active Tasks & Deadlines: ${JSON.stringify(tasks, null, 2)} Return a strict JSON object with these keys: { "prioritizedTaskIds": ["id1", "id2", ...], "burnoutRisk": "Low" | "Moderate" | "High", "workloadFactor": number (1 to 100), "summary": "Brief 1-2 sentence executive assessment", "actionableSteps": ["Concrete recommendation 1", "Concrete recommendation 2", "Concrete recommendation 3"], "studySchedule": [{ "timeSlot": "09:00 - 11:00", "subject": "Subject Code/Name", "task": "Task title", "focusStrategy": "Deep Work / Problem Solving" }] }`;
       const response = await ai.models.generateContent({
@@ -455,6 +447,13 @@ const handleAiRoute = async (req: any, res: any, route: string) => {
       return res.status(200).json(JSON.parse(response.text || '{}'));
     }
   } catch (error: any) {
+    if (route === 'ai/prioritize-workload') {
+      console.error('AI workload route failed; returning deadline-based fallback.', error);
+      return res.status(200).json(createWorkloadFallback(
+        Array.isArray(body.tasks) ? body.tasks : [],
+        Array.isArray(body.subjects) ? body.subjects : []
+      ));
+    }
     return res.status(500).json({ error: error.message || 'AI route failed.' });
   }
 

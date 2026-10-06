@@ -1,11 +1,11 @@
 import React from 'react';
-import { Plus, Database, Sparkles, LogOut, MessageCircle, Wrench } from 'lucide-react';
+import { Plus, Database, Sparkles, LogOut, MessageCircle, Wrench, ShieldCheck } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { BrandMark } from './BrandMark';
 
 interface NavbarProps {
-  activeTab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat';
-  setActiveTab: (tab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat') => void;
+  activeTab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat' | 'admin';
+  setActiveTab: (tab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat' | 'admin') => void;
   onOpenNewTask: () => void;
   onOpenFirebaseModal: () => void;
   connectionStatus: {
@@ -15,6 +15,7 @@ interface NavbarProps {
   };
   user?: User | null;
   onLogout?: () => void;
+  adminAccess?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,6 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   connectionStatus,
   user,
   onLogout,
+  adminAccess = false,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
@@ -109,6 +111,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <MessageCircle className="h-3.5 w-3.5" />Chat
           </button>
+          {adminAccess && <button
+            onClick={() => setActiveTab('admin')}
+            className={`flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${activeTab === 'admin' ? 'bg-cyan-950/80 text-cyan-200' : 'text-cyan-300 hover:bg-cyan-950/40'}`}
+          ><ShieldCheck className="h-3.5 w-3.5" />Admin</button>}
         </nav>
 
         {/* Zone 3: Primary Actions */}
@@ -179,6 +185,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           Chat
         </button>
+        {adminAccess && <button
+          onClick={() => setActiveTab('admin')}
+          className={`px-2 py-1 whitespace-nowrap ${activeTab === 'admin' ? 'font-semibold text-cyan-200' : 'text-cyan-300'}`}
+        >Admin</button>}
       </div>
     </header>
   );

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { User } from 'firebase/auth';
+import { db } from './services/firebase';
 import { useAcademicStore } from './hooks/useAcademicStore';
 import { initAuth, logoutGoogle, detectAllPendingActivities, fetchClassroomActivities, debugGoogleWorkspaceSync } from './services/googleWorkspace';
 import { AuthScreen } from './components/AuthScreen';
@@ -17,11 +19,13 @@ import { ResourceModal } from './components/ResourceModal';
 import { FirebaseModal } from './components/FirebaseModal';
 import { ChatView } from './components/ChatView';
 import { ToolsView } from './components/ToolsView';
+import { AdminPanel } from './components/AdminPanel';
 import { ensurePublicProfile } from './services/socialService';
 import { getInstitutionInfo } from './utils/institutionHelper';
 import { isWithinReminderWindow, getCountdown } from './utils/dateUtils';
 import { claimDeadlineReminderEmail, markDeadlineReminderEmailFailed, markDeadlineReminderEmailSent } from './services/deadlineReminders';
 import { sendDeadlineReminderEmail } from './services/googleWorkspace';
+import { Announcement, ensureUserAccess, isOwnerAccount, recordSystemEvent, subscribeUserAccess, UserAccess } from './services/adminService';
 import { AcademicTask, Subject, AcademicResource } from './types';
 import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 
@@ -33,6 +37,10 @@ export default function App() {
   const [detectStatusMessage, setDetectStatusMessage] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [reminderError, setReminderError] = useState('');
+  const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
+  const [isRootAdmin, setIsRootAdmin] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>([]);
 
   const {
     subjects,
@@ -60,7 +68,7 @@ export default function App() {
   tasksRef.current = tasks;
   subjectsRef.current = subjects;
 
-  const [activeTab, setActiveTab] = useState<'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat' | 'admin'>('tasks');
 
   // Modals state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -89,6 +97,66 @@ export default function App() {
     );
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setUserAccess(null);
+      setIsRootAdmin(false);
+      return;
+    }
+
+    const rootAdmin = isOwnerAccount(currentUser);
+    setIsRootAdmin(rootAdmin);
+    void ensureUserAccess(currentUser).catch((error) => {
+      console.warn('Could not update admin access heartbeat:', error);
+    });
+
+    const unsubscribe = subscribeUserAccess(currentUser.uid, (access) => {
+      setUserAccess(access);
+      const adminEnabled = rootAdmin || access?.role === 'admin';
+      setActiveTab((current) => current === 'admin' && !adminEnabled ? 'tasks' : current);
+      if (access?.suspended && !rootAdmin) {
+        void logoutGoogle().finally(() => {
+          setCurrentUser(null);
+          setAccessToken(null);
+        });
+      }
+    });
+    const heartbeatId = window.setInterval(() => {
+      void ensureUserAccess(currentUser).catch(() => {});
+    }, 5 * 60 * 1000);
+    return () => {
+      unsubscribe();
+      window.clearInterval(heartbeatId);
+    };
+  }, [currentUser?.uid]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setAnnouncements([]);
+      return;
+    }
+    const activeAnnouncements = query(
+      collection(db, 'site_announcements'),
+      orderBy('createdAt', 'desc'),
+      limit(20)
+    );
+    return onSnapshot(activeAnnouncements, (snapshot) => {
+      setAnnouncements(snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as Announcement)));
+    }, (error) => console.warn('Could not load announcements:', error));
+  }, [currentUser?.uid]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setDismissedAnnouncements([]);
+      return;
+    }
+    try {
+      setDismissedAnnouncements(JSON.parse(localStorage.getItem(`acadpulse:dismissed-announcements:${currentUser.uid}`) || '[]'));
+    } catch {
+      setDismissedAnnouncements([]);
+    }
+  }, [currentUser?.uid]);
 
   useEffect(() => {
     if (!currentUser?.uid) {
@@ -135,6 +203,12 @@ export default function App() {
           } catch (error) {
             await markDeadlineReminderEmailFailed(currentUser.uid, task, error);
             setReminderError(error instanceof Error ? error.message : 'Gmail could not send the reminder.');
+            const eventKey = `acadpulse:last-reminder-error:${currentUser.uid}:${task.id}`;
+            const lastRecordedAt = Number(localStorage.getItem(eventKey) || 0);
+            if (now - lastRecordedAt >= 60 * 60 * 1000) {
+              await recordSystemEvent(currentUser, 'reminder_delivery_failed', `${task.title}: ${error instanceof Error ? error.message : 'Gmail send failed.'}`).catch(() => {});
+              localStorage.setItem(eventKey, String(now));
+            }
           }
         }
       } finally {
@@ -373,6 +447,7 @@ export default function App() {
       recordWorkspaceSync(user.uid);
     } catch (err) {
       console.warn('Auto detection notice on login:', err);
+      void recordSystemEvent(user, 'google_sync_failed', err instanceof Error ? err.message : 'Automatic Google sync failed.').catch(() => {});
     } finally {
       setTimeout(() => {
         setIsAutoDetecting(false);
@@ -385,6 +460,19 @@ export default function App() {
     await logoutGoogle();
     setCurrentUser(null);
     setAccessToken(null);
+  };
+
+  const institutionDomain = getInstitutionInfo(currentUser?.email).domain;
+  const adminAccess = isRootAdmin || userAccess?.role === 'admin';
+  const visibleAnnouncements = announcements.filter((announcement) => (
+    announcement.active
+    && !dismissedAnnouncements.includes(announcement.id)
+    && (announcement.audience === 'all' || announcement.institutionDomain === institutionDomain)
+  ));
+  const dismissAnnouncement = (announcementId: string) => {
+    const next = [...dismissedAnnouncements, announcementId];
+    setDismissedAnnouncements(next);
+    if (currentUser) localStorage.setItem(`acadpulse:dismissed-announcements:${currentUser.uid}`, JSON.stringify(next));
   };
 
   // Handlers for Task Modal
@@ -437,33 +525,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#020b16] text-slate-100 selection:bg-indigo-600 selection:text-white relative overflow-hidden">
-      <style>{`
-        @keyframes float-slow {
-          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(0, -18px, 0) scale(1.08); }
-        }
-        @keyframes float-delayed {
-          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(18px, -22px, 0) scale(1.12); }
-        }
-        @keyframes grid-shift {
-          0% { transform: perspective(1200px) rotateX(68deg) translateY(0); }
-          50% { transform: perspective(1200px) rotateX(68deg) translateY(18px); }
-          100% { transform: perspective(1200px) rotateX(68deg) translateY(0); }
-        }
-      `}</style>
-
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 left-[-8%] h-72 w-72 rounded-full bg-indigo-500/25 blur-3xl animate-[float-slow_18s_ease-in-out_infinite]" />
-        <div className="absolute top-[18%] right-[-6%] h-96 w-96 rounded-full bg-violet-500/18 blur-3xl animate-[float-delayed_26s_ease-in-out_infinite]" />
-        <div className="absolute bottom-[-12%] left-[20%] h-80 w-80 rounded-full bg-amber-400/12 blur-3xl animate-[float-slow_22s_ease-in-out_infinite]" />
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] [background-size:130px_130px] [transform:perspective(1500px)_rotateX(68deg)] animate-[grid-shift_24s_ease-in-out_infinite]" />
+        <div className="motion-grid absolute inset-0" />
+        <div className="motion-scan absolute left-0 top-[22%] h-px w-full" />
+        <div className="motion-scan motion-scan-late absolute left-0 top-[74%] h-px w-full" />
       </div>
 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.12),_transparent_24%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.04),transparent_40%,rgba(255,255,255,0.02))] pointer-events-none" />
 
-      <div className="relative z-10 flex min-h-screen flex-col">
+      <div className="motion-screen-enter relative z-10 flex min-h-screen flex-col">
         <Navbar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -472,6 +543,7 @@ export default function App() {
           connectionStatus={connectionStatus}
           user={currentUser}
           onLogout={handleLogout}
+          adminAccess={adminAccess}
         />
 
         {isAutoDetecting && (
@@ -484,11 +556,11 @@ export default function App() {
         )}
 
         <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mb-6 rounded-3xl border border-slate-800/80 bg-slate-900/60 p-3 shadow-xl shadow-indigo-950/10 backdrop-blur-sm">
+          {visibleAnnouncements.map((announcement) => <div key={announcement.id} className="mb-4 flex items-start justify-between gap-4 border-l-2 border-cyan-400 bg-cyan-950/35 px-4 py-3"><div><h2 className="text-sm font-semibold text-cyan-100">{announcement.title}</h2><p className="mt-1 whitespace-pre-wrap text-sm text-slate-300">{announcement.message}</p></div><button onClick={() => dismissAnnouncement(announcement.id)} aria-label="Dismiss announcement" className="shrink-0 px-2 text-lg leading-none text-slate-400 hover:text-white">×</button></div>)}
+          <div className="motion-stage-1 mb-6 rounded-3xl border border-slate-800/80 bg-slate-900/60 p-3 shadow-xl shadow-indigo-950/10 backdrop-blur-sm">
             <InstitutionalLoginBanner
               user={currentUser}
               token={accessToken}
-              onLogout={handleLogout}
               onSyncActivities={handleSyncActivities}
               onSynced={() => recordWorkspaceSync()}
               lastSyncedAt={lastSyncedAt}
@@ -496,7 +568,7 @@ export default function App() {
             />
           </div>
 
-          <div className="mb-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3 shadow-lg shadow-slate-950/40">
+          <div className="motion-stage-2 mb-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3 shadow-lg shadow-slate-950/40">
             <WorkloadMetricsBar
               metrics={workloadMetrics}
               tasks={tasks}
@@ -504,7 +576,7 @@ export default function App() {
             />
           </div>
 
-          <div className="flex-1 rounded-2xl border border-slate-800/80 bg-slate-900/45 p-3 shadow-lg shadow-slate-950/40">
+          <div key={activeTab} className="motion-tab-enter flex-1 rounded-2xl border border-slate-800/80 bg-slate-900/45 p-3 shadow-lg shadow-slate-950/40">
             {activeTab === 'tasks' && (
               <TaskListView
                 tasks={tasks}
@@ -539,6 +611,7 @@ export default function App() {
 
             {activeTab === 'ai' && (
               <AiAdvisorView
+                user={currentUser}
                 tasks={tasks}
                 subjects={subjects}
                 metrics={workloadMetrics}
@@ -566,6 +639,10 @@ export default function App() {
 
             {activeTab === 'chat' && (
               <ChatView user={currentUser} />
+            )}
+
+            {activeTab === 'admin' && adminAccess && (
+              <AdminPanel user={currentUser} isRootAdmin={isRootAdmin} />
             )}
           </div>
         </main>

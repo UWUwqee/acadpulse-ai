@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
+import { createWorkloadFallback } from './src/utils/workloadAdvisor';
 
 dotenv.config();
 
@@ -399,18 +400,7 @@ app.post('/api/ai/prioritize-workload', async (req: Request, res: Response) => {
     }
 
     if (!ai) {
-      // Algorithmic fallback if API key is temporarily absent
-      const urgentTasks = tasks.filter((t: any) => t.priority === 'urgent' || t.status === 'in_progress');
-      return res.json({
-        prioritizedTaskIds: urgentTasks.map((t: any) => t.id),
-        burnoutRisk: tasks.length > 5 ? 'Moderate' : 'Low',
-        workloadFactor: Math.min(100, tasks.length * 15),
-        summary: `Prioritizing ${urgentTasks.length} urgent tasks based on imminent deadline heuristics.`,
-        actionableSteps: [
-          'Complete nearest deliverable within a dedicated 2-hour morning block.',
-          'Review upcoming exam materials with spaced repetition.',
-        ],
-      });
+      return res.json(createWorkloadFallback(tasks, Array.isArray(subjects) ? subjects : []));
     }
 
     const prompt = `You are an expert academic advisor and workload management AI for college students.
@@ -447,10 +437,10 @@ Do not include markdown ticks around the JSON.`;
     return res.json(parsed);
   } catch (error: any) {
     console.error('AI Workload Prioritization error:', error);
-    return res.status(500).json({
-      error: 'Failed to generate AI workload prioritization.',
-      details: error.message,
-    });
+    return res.json(createWorkloadFallback(
+      Array.isArray(req.body?.tasks) ? req.body.tasks : [],
+      Array.isArray(req.body?.subjects) ? req.body.subjects : []
+    ));
   }
 });
 

@@ -3,11 +3,11 @@ import { User } from 'firebase/auth';
 import { detectAllPendingActivities, DetectedSchoolActivity } from '../services/googleWorkspace';
 import { Subject, AcademicTask } from '../types';
 import { getInstitutionInfo } from '../utils/institutionHelper';
+import { recordSystemEvent } from '../services/adminService';
 import {
   Loader2,
   CheckCircle2,
   RefreshCw,
-  LogOut,
   Calendar,
   GraduationCap,
   Briefcase,
@@ -19,7 +19,6 @@ import {
 interface InstitutionalLoginBannerProps {
   user: User;
   token: string | null;
-  onLogout: () => void;
   onSyncActivities: (
     newCourses: Subject[],
     newTasks: Omit<AcademicTask, 'id' | 'createdAt'>[]
@@ -32,7 +31,6 @@ interface InstitutionalLoginBannerProps {
 export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> = ({
   user,
   token,
-  onLogout,
   onSyncActivities,
   onSynced,
   lastSyncedAt,
@@ -110,6 +108,7 @@ export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> =
       console.error('Detection error:', err);
       const msg = err instanceof Error ? err.message : 'Failed to fetch pending activities from Google Workspace.';
       setErrorMsg(msg);
+      void recordSystemEvent(user, 'google_sync_failed', msg).catch(() => {});
     } finally {
       setIsDetecting(false);
     }
@@ -174,7 +173,7 @@ export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> =
           </div>
         </div>
 
-        {/* Right Side: Re-detect Activities & Sign Out */}
+        {/* Right Side: Re-detect Activities */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
           <button
             onClick={handleDetectAndSync}
@@ -191,14 +190,6 @@ export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> =
             </span>
           </button>
 
-          <button
-            onClick={onLogout}
-            title="Sign out from Google account"
-            className="px-3 py-1.5 text-xs text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Sign Out</span>
-          </button>
         </div>
       </div>
 

@@ -3,11 +3,109 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() {
-      return request.auth != null;
+      return request.auth != null && (
+        isRootAdmin() || !isSuspended(request.auth.uid)
+      );
     }
 
     function isOwner(uid) {
       return signedIn() && request.auth.uid == uid;
+    }
+
+    function isRootAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'ftluzano@paterostechnologicalcollege.edu.ph';
+    }
+
+    function accessPath(uid) {
+      return /databases/$(database)/documents/user_access/$(uid);
+    }
+
+    function isSuspended(uid) {
+      return exists(accessPath(uid))
+        && get(accessPath(uid)).data.get('suspended', false) == true;
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        isRootAdmin() || (
+          exists(accessPath(request.auth.uid))
+          && get(accessPath(request.auth.uid)).data.get('role', 'member') in ['owner', 'admin']
+        )
+      );
+    }
+
+    match /user_access/{uid} {
+      allow get: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isRootAdmin()
+        || (request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['uid', 'email', 'lastSeenAt'])
+          && request.resource.data.uid == uid
+          && request.resource.data.email == request.auth.token.email);
+
+      allow update: if isRootAdmin()
+        || (isAdmin()
+          && uid != request.auth.uid
+          && resource.data.get('role', 'member') != 'owner'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended', 'suspendedBy', 'updatedAt'])
+          && request.resource.data.get('suspendedBy', '') == request.auth.uid)
+        || (request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'lastSeenAt'])
+          && request.resource.data.email == request.auth.token.email);
+
+      allow delete: if false;
+    }
+
+    match /system_events/{eventId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'eventType', 'message', 'createdAt'])
+        && request.resource.data.eventType is string
+        && request.resource.data.message is string;
+      allow get, list: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /site_announcements/{announcementId} {
+      allow get, list: if signedIn();
+      allow create: if isAdmin()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.message is string
+        && request.resource.data.audience in ['all', 'institution'];
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /admin_audit_logs/{entryId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.action is string
+        && request.resource.data.details is string;
+      allow update, delete: if false;
+    }
+
+    match /user_reports/{reportId} {
+      allow get: if isAdmin() || (signedIn() && resource.data.reporterUid == request.auth.uid);
+      allow list: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetUid != request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.category is string
+        && request.resource.data.details is string;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reviewedBy', 'reviewedAt'])
+        && request.resource.data.status in ['reviewed', 'dismissed']
+        && request.resource.data.reviewedBy == request.auth.uid;
+      allow delete: if false;
     }
 
     match /users/{uid} {

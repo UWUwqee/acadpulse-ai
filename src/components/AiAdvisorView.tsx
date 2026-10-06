@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { User } from 'firebase/auth';
 import { AcademicTask, Subject, WorkloadAnalysis } from '../types';
 import { BrandMark } from './BrandMark';
+import { recordSystemEvent } from '../services/adminService';
 import {
   Sparkles,
   Loader2,
@@ -14,6 +16,7 @@ import {
 } from 'lucide-react';
 
 interface AiAdvisorViewProps {
+  user: User;
   tasks: AcademicTask[];
   subjects: Subject[];
   metrics: WorkloadAnalysis;
@@ -21,6 +24,7 @@ interface AiAdvisorViewProps {
 }
 
 export const AiAdvisorView: React.FC<AiAdvisorViewProps> = ({
+  user,
   tasks,
   subjects,
   metrics,
@@ -31,6 +35,7 @@ export const AiAdvisorView: React.FC<AiAdvisorViewProps> = ({
     prioritizedTaskIds?: string[];
     burnoutRisk?: string;
     workloadFactor?: number;
+    fallback?: boolean;
     summary?: string;
     actionableSteps?: string[];
     studySchedule?: {
@@ -42,11 +47,13 @@ export const AiAdvisorView: React.FC<AiAdvisorViewProps> = ({
   } | null>(null);
 
   const [appliedNotice, setAppliedNotice] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
 
   const handleRunAiAnalysis = async () => {
     try {
       setLoading(true);
       setAppliedNotice(false);
+      setAnalysisError('');
 
       const activeTasks = tasks.filter((t) => t.status !== 'completed');
 
@@ -59,11 +66,15 @@ export const AiAdvisorView: React.FC<AiAdvisorViewProps> = ({
         }),
       });
 
-      if (!res.ok) throw new Error('AI analysis failed');
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.details || 'Analysis could not be completed.');
       setAiResult(data);
+      if (data.fallback) {
+        void recordSystemEvent(user, 'ai_fallback', 'Gemini was unavailable; deadline-based workload recommendations were shown.').catch(() => {});
+      }
     } catch (err) {
       console.error('Error running AI advisor:', err);
+      setAnalysisError(err instanceof Error ? err.message : 'Analysis could not be completed.');
     } finally {
       setLoading(false);
     }
@@ -110,6 +121,9 @@ export const AiAdvisorView: React.FC<AiAdvisorViewProps> = ({
           <span>{loading ? 'Evaluating Workload...' : 'Run Real-Time AI Analysis'}</span>
         </button>
       </div>
+
+      {analysisError && <div role="alert" className="rounded-md border border-rose-800 bg-rose-950/40 p-3 text-sm text-rose-200">{analysisError}</div>}
+      {aiResult?.fallback && <div className="rounded-md border border-amber-800/60 bg-amber-950/30 p-3 text-sm text-amber-200">AI is temporarily busy. These recommendations use your activity deadlines instead.</div>}
 
       {/* Applied Notice Feedback */}
       {appliedNotice && (
