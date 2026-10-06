@@ -98,31 +98,42 @@ export async function fetchClassroomActivities(
   const activities: DetectedSchoolActivity[] = [];
 
   try {
-    // Attempt 1: Fetch courses where student is enrolled
-    let coursesRes = await fetch(
+    const courseFetchCandidates = [
       'https://classroom.googleapis.com/v1/courses?studentId=me&courseStates=ACTIVE',
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+      'https://classroom.googleapis.com/v1/userCourses?userId=me&courseStates=ACTIVE',
+      'https://classroom.googleapis.com/v1/courses?courseStates=ACTIVE',
+    ];
 
-    // Fallback if studentId=me query fails or returns non-200
-    if (!coursesRes.ok) {
-      coursesRes = await fetch(
-        'https://classroom.googleapis.com/v1/courses?courseStates=ACTIVE',
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    let coursesList: any[] = [];
+
+    for (const url of courseFetchCandidates) {
+      const coursesRes = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!coursesRes.ok) {
+        continue;
+      }
+
+      const coursesData = await coursesRes.json();
+      const nextCourses = coursesData.courses || coursesData.userCourses || [];
+      if (Array.isArray(nextCourses) && nextCourses.length > 0) {
+        coursesList = nextCourses.map((course) => ({
+          ...course,
+          id: course.id,
+          name: course.name || course.course?.name || 'Classroom Course',
+          section: course.section || course.course?.section,
+          room: course.room || course.course?.room,
+          creatorUserId: course.creatorUserId || course.course?.creatorUserId,
+        }));
+        break;
+      }
     }
 
-    if (!coursesRes.ok) {
-      console.warn('Classroom courses fetch status:', coursesRes.status);
+    if (coursesList.length === 0) {
+      console.warn('Classroom courses fetch returned no active courses for this account.');
       return { courses: [], activities: [] };
     }
-
-    const coursesData = await coursesRes.json();
-    const coursesList = coursesData.courses || [];
 
     const colorPalette = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6'];
 
