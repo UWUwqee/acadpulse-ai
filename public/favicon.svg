@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="AcadPulse-AI logo">
+  <defs>
+    <linearGradient id="bg" x1="12" y1="12" x2="116" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f8e7b6"/>
+      <stop offset="0.35" stop-color="#d4a85e"/>
+      <stop offset="0.72" stop-color="#9a7348"/>
+      <stop offset="1" stop-color="#4f3320"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="28" y1="23" x2="94" y2="97" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="0.35" stop-color="#f4d890"/>
+      <stop offset="0.7" stop-color="#d4a653"/>
+      <stop offset="1" stop-color="#8d683c"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="26" fill="url(#bg)"/>
+  <rect x="16" y="16" width="96" height="96" rx="20" fill="url(#bg)" opacity="0.15"/>
+  <path d="M38 80L64 32L90 80" fill="none" stroke="url(#gold)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M49 63H79" fill="none" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M64 80V58" fill="none" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="92" cy="33" r="6" fill="#f9ebbd"/>
+</svg>
