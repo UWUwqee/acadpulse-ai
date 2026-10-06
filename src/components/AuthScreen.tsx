@@ -43,7 +43,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
             <BrandMark size="lg" />
             <div>
               <div className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Welcome</div>
-              <div className="text-2xl font-bold text-white">AcadPulse-AI</div>
+              <div className="text-2xl font-bold bg-gradient-to-r from-[#f9f6df] via-[#f0d98b] to-[#d7a857] bg-clip-text text-transparent">
+                AcadPulse-AI
+              </div>
             </div>
           </div>
 

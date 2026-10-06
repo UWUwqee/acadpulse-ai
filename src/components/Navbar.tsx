@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <BrandMark size="sm" />
           <button
             onClick={() => setActiveTab('tasks')}
-            className="text-base sm:text-lg font-bold tracking-tight text-white hover:text-indigo-400 transition-colors cursor-pointer text-left"
+            className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-[#f7f0d0] via-[#f0d789] to-[#d79c45] bg-clip-text text-transparent hover:brightness-125 transition-all cursor-pointer text-left"
           >
             AcadPulse-AI
           </button>
