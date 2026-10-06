@@ -1,3 +1,14 @@
+export function normalizeDueDate(value?: string | null): string {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return '';
+
+  return parsed.toISOString();
+}
+
 export function formatDateTime(isoString: string): string {
   if (!isoString) return '';
   const d = new Date(isoString);

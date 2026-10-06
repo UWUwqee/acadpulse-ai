@@ -118,7 +118,7 @@ async function fetchClassroomGoogleData(token: string) {
         // ignore if submission can't be read
       }
 
-      let dueDateIso = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+      let dueDateIso = '';
       if (cw.dueDate) {
         const d = new Date();
         d.setFullYear(cw.dueDate.year || d.getFullYear());
@@ -240,7 +240,7 @@ async function fetchGoogleTasksData(token: string) {
 
     for (const t of tasksPayload.items || []) {
       if (!t.title) continue;
-      const dueDateIso = t.due ? new Date(t.due).toISOString() : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+      const dueDateIso = t.due ? new Date(t.due).toISOString() : '';
       let actType: 'assignment' | 'project' | 'quiz' | 'examination' = 'assignment';
       const lower = String(t.title).toLowerCase();
       if (lower.includes('project') || lower.includes('capstone') || lower.includes('sprint')) actType = 'project';

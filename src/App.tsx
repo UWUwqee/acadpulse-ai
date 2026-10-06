@@ -153,7 +153,7 @@ export default function App() {
             type: act.type,
             dueDate,
             estimatedHours: act.estimatedHours,
-            priority: dueDate ? 'urgent' : 'medium',
+            priority: dueDate ? 'high' : 'medium',
             status: act.status,
             subtasks: [
               {

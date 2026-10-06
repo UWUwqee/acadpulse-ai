@@ -9,6 +9,7 @@ import {
   Unsubscribe
 } from 'firebase/firestore';
 import { Subject, AcademicTask, AcademicResource, FirebaseConnectionConfig, WorkloadAnalysis } from '../types';
+import { normalizeDueDate } from '../utils/dateUtils';
 import { db, firebaseConfig } from './firebase';
 
 type Listener<T> = (data: T) => void;
@@ -493,7 +494,8 @@ class RealtimeStoreManager {
 
     pendingTasks.forEach((task) => {
       totalPendingHours += task.estimatedHours || 2;
-      const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+      const normalizedDueDate = normalizeDueDate(task.dueDate);
+      const dueDate = normalizedDueDate ? new Date(normalizedDueDate) : null;
       const dueTime = dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.getTime() : null;
 
       if (!dueTime) {
@@ -502,8 +504,10 @@ class RealtimeStoreManager {
       }
 
       const diffHours = (dueTime - nowTime) / (1000 * 60 * 60);
+      const isUrgentByDeadline = diffHours <= 48;
+      const isUrgentByPriority = task.priority === 'urgent' && diffHours > 0 && diffHours <= 72;
 
-      if (diffHours <= 48 || task.priority === 'urgent') {
+      if (isUrgentByDeadline || isUrgentByPriority) {
         urgentCount++;
       }
 

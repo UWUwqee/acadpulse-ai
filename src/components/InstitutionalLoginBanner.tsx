@@ -67,7 +67,7 @@ export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> =
           type: act.type,
           dueDate: act.dueDate,
           estimatedHours: act.estimatedHours,
-          priority: 'urgent',
+          priority: act.dueDate ? 'high' : 'medium',
           status: act.status,
           subtasks: [
             {
