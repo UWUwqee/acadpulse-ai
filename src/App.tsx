@@ -238,7 +238,30 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020b16] text-slate-100 selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen bg-[#020b16] text-slate-100 selection:bg-indigo-600 selection:text-white relative overflow-hidden">
+      <style>{`
+        @keyframes float-slow {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+          50% { transform: translate3d(0, -18px, 0) scale(1.08); }
+        }
+        @keyframes float-delayed {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+          50% { transform: translate3d(18px, -22px, 0) scale(1.12); }
+        }
+        @keyframes grid-shift {
+          0% { transform: perspective(1200px) rotateX(68deg) translateY(0); }
+          50% { transform: perspective(1200px) rotateX(68deg) translateY(18px); }
+          100% { transform: perspective(1200px) rotateX(68deg) translateY(0); }
+        }
+      `}</style>
+
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-16 left-[-6%] h-72 w-72 rounded-full bg-indigo-500/18 blur-3xl animate-[float-slow_18s_ease-in-out_infinite]" />
+        <div className="absolute top-1/3 right-[-8%] h-80 w-80 rounded-full bg-violet-500/16 blur-3xl animate-[float-delayed_24s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[-12%] left-1/3 h-80 w-80 rounded-full bg-amber-400/10 blur-3xl animate-[float-slow_20s_ease-in-out_infinite]" />
+        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] [background-size:120px_120px] [transform:perspective(1200px)_rotateX(68deg)] animate-[grid-shift_22s_ease-in-out_infinite]" />
+      </div>
+
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.12),_transparent_24%)] pointer-events-none" />
 
       <div className="relative z-10 flex min-h-screen flex-col">
