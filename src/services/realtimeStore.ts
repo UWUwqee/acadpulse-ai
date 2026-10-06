@@ -509,13 +509,7 @@ class RealtimeStoreManager {
       }
 
       const diffHours = (dueTime - nowTime) / (1000 * 60 * 60);
-      const isFutureDeadline = diffHours > 0;
-      const isUrgentByDeadline = isFutureDeadline && diffHours <= 48;
-      const isUrgentByPriority = task.priority === 'urgent' && isFutureDeadline && diffHours <= 72;
-
-      if (isUrgentByDeadline || isUrgentByPriority) {
-        urgentCount++;
-      }
+      urgentCount++;
 
       if (task.type === 'examination' || task.type === 'quiz') {
         examWeightScore += (task.weightPercentage || 20) * (diffHours < 72 ? 1.5 : 1);
@@ -557,7 +551,7 @@ class RealtimeStoreManager {
 
     const recommendations: string[] = [];
     if (urgentCount > 0) {
-      recommendations.push(`Prioritize ${urgentCount} urgent deliverable${urgentCount > 1 ? 's' : ''} due in under 48 hours.`);
+      recommendations.push(`Prioritize ${urgentCount} pending deliverable${urgentCount > 1 ? 's' : ''} with upcoming deadlines.`);
     }
     if (totalPendingHours > 15) {
       recommendations.push('Schedule 90-minute Pomodoro study blocks across consecutive mornings to alleviate high workload density.');
