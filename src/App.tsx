@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
 import { useAcademicStore } from './hooks/useAcademicStore';
-import { initAuth, logoutGoogle, detectAllPendingActivities, debugGoogleWorkspaceSync } from './services/googleWorkspace';
+import { initAuth, logoutGoogle, detectAllPendingActivities, fetchClassroomActivities, debugGoogleWorkspaceSync } from './services/googleWorkspace';
 import { AuthScreen } from './components/AuthScreen';
 import { Navbar } from './components/Navbar';
 import { InstitutionalLoginBanner } from './components/InstitutionalLoginBanner';
@@ -15,6 +15,9 @@ import { TaskModal } from './components/TaskModal';
 import { SubjectModal } from './components/SubjectModal';
 import { ResourceModal } from './components/ResourceModal';
 import { FirebaseModal } from './components/FirebaseModal';
+import { ChatView } from './components/ChatView';
+import { ToolsView } from './components/ToolsView';
+import { ensurePublicProfile } from './services/socialService';
 import { getInstitutionInfo } from './utils/institutionHelper';
 import { AcademicTask, Subject, AcademicResource } from './types';
 import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
@@ -25,6 +28,7 @@ export default function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAutoDetecting, setIsAutoDetecting] = useState(false);
   const [detectStatusMessage, setDetectStatusMessage] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   const {
     subjects,
@@ -47,7 +51,12 @@ export default function App() {
     clearAll,
   } = useAcademicStore(currentUser?.uid);
 
-  const [activeTab, setActiveTab] = useState<'tasks' | 'schedule' | 'resources' | 'ai' | 'courses'>('tasks');
+  const tasksRef = useRef(tasks);
+  const subjectsRef = useRef(subjects);
+  tasksRef.current = tasks;
+  subjectsRef.current = subjects;
+
+  const [activeTab, setActiveTab] = useState<'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat'>('tasks');
 
   // Modals state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -77,10 +86,72 @@ export default function App() {
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setLastSyncedAt(null);
+      return;
+    }
+
+    try {
+      setLastSyncedAt(window.localStorage.getItem(`acadpulse:last-sync:${currentUser.uid}`));
+    } catch {
+      setLastSyncedAt(null);
+    }
+  }, [currentUser?.uid]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    void ensurePublicProfile(currentUser.uid, currentUser.displayName || 'Student').catch((error) => {
+      console.warn('Could not initialize public user profile:', error);
+    });
+  }, [currentUser?.uid]);
+
+  const recordWorkspaceSync = (userId = currentUser?.uid) => {
+    if (!userId) return;
+    const syncedAt = new Date().toISOString();
+    setLastSyncedAt(syncedAt);
+    try {
+      window.localStorage.setItem(`acadpulse:last-sync:${userId}`, syncedAt);
+    } catch {
+      // Keep the current-session timestamp if browser storage is unavailable.
+    }
+  };
+
+  const reconcileCompletedActivities = async (
+    detected: Array<Pick<AcademicTask, 'title' | 'subjectId' | 'dueDate' | 'status' | 'notes'>>
+  ) => {
+    for (const activity of detected) {
+      if (activity.status !== 'completed') continue;
+
+      const activityLink = activity.notes?.match(/Link:\s*(https?:\/\/\S+)/)?.[1];
+      const normalizedTitle = activity.title.trim().toLowerCase();
+      const normalizedDueDate = activity.dueDate.substring(0, 10);
+      const existingTask = tasksRef.current.find((task) => {
+        if (
+          task.title.trim().toLowerCase() !== normalizedTitle ||
+          task.dueDate.substring(0, 10) !== normalizedDueDate
+        ) {
+          return false;
+        }
+
+        return task.subjectId === activity.subjectId || Boolean(activityLink && task.notes?.includes(activityLink));
+      });
+
+      if (existingTask && existingTask.status !== 'completed') {
+        tasksRef.current = tasksRef.current.map((task) =>
+          task.id === existingTask.id ? { ...task, status: 'completed' } : task
+        );
+        await updateTask(existingTask.id, { status: 'completed' });
+      }
+    }
+  };
+
   const handleSyncActivities = async (
     newCourses: Subject[],
     newTasks: Omit<AcademicTask, 'id' | 'createdAt'>[]
   ) => {
+    await reconcileCompletedActivities(newTasks);
+
     // Add any courses that don't already exist
     for (const course of newCourses) {
       const exists = subjects.some(
@@ -107,6 +178,80 @@ export default function App() {
       await addTasksBatch(tasksToAdd);
     }
   };
+
+  useEffect(() => {
+    if (
+      !currentUser?.uid ||
+      !accessToken ||
+      isAutoDetecting ||
+      !getInstitutionInfo(currentUser.email).isInstitutional
+    ) {
+      return;
+    }
+
+    const syncIntervalMs = 60_000;
+    let isSyncing = false;
+
+    const syncClassroomSubmissions = async () => {
+      if (isSyncing || document.visibilityState !== 'visible') return;
+      isSyncing = true;
+
+      try {
+        const result = await fetchClassroomActivities(accessToken);
+        const completedActivities = result.activities
+          .filter((activity) => activity.source === 'classroom' && activity.status === 'completed')
+          .map((activity) => {
+            const detectedCourse = result.courses.find(
+              (course) =>
+                course.name.toLowerCase() === activity.courseName.toLowerCase() ||
+                course.code === activity.courseCode
+            );
+            const localCourse = subjectsRef.current.find(
+              (subject) =>
+                subject.name.toLowerCase() === activity.courseName.toLowerCase() ||
+                subject.code === activity.courseCode
+            );
+
+            return {
+              title: activity.title,
+              subjectId: localCourse?.id || detectedCourse?.id || '',
+              dueDate: activity.dueDate || '',
+              status: activity.status,
+              notes: `${activity.notes || ''}${activity.link ? `\nLink: ${activity.link}` : ''}`,
+            };
+          });
+
+        await reconcileCompletedActivities(completedActivities);
+        recordWorkspaceSync(currentUser.uid);
+      } catch (error) {
+        console.warn('Automatic Google Classroom submission sync failed:', error);
+      } finally {
+        isSyncing = false;
+      }
+    };
+
+    const syncKey = `acadpulse:last-sync:${currentUser.uid}`;
+    let lastSyncTime = 0;
+    try {
+      lastSyncTime = Date.parse(window.localStorage.getItem(syncKey) || '') || 0;
+    } catch {
+      lastSyncTime = 0;
+    }
+    if (Date.now() - lastSyncTime >= syncIntervalMs) {
+      void syncClassroomSubmissions();
+    }
+
+    const intervalId = window.setInterval(syncClassroomSubmissions, syncIntervalMs);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void syncClassroomSubmissions();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [currentUser?.uid, currentUser?.email, accessToken, isAutoDetecting, updateTask]);
 
   const handleLoginSuccess = async (user: User, token: string) => {
     setCurrentUser(user);
@@ -173,6 +318,7 @@ export default function App() {
 
         await handleSyncActivities(visibleCourses, formattedTasks);
       }
+      recordWorkspaceSync(user.uid);
     } catch (err) {
       console.warn('Auto detection notice on login:', err);
     } finally {
@@ -292,6 +438,8 @@ export default function App() {
               token={accessToken}
               onLogout={handleLogout}
               onSyncActivities={handleSyncActivities}
+              onSynced={() => recordWorkspaceSync()}
+              lastSyncedAt={lastSyncedAt}
               existingSubjects={subjects}
             />
           </div>
@@ -358,6 +506,14 @@ export default function App() {
                   setActiveTab('tasks');
                 }}
               />
+            )}
+
+            {activeTab === 'tools' && (
+              <ToolsView user={currentUser} tasks={tasks} subjects={subjects} />
+            )}
+
+            {activeTab === 'chat' && (
+              <ChatView user={currentUser} />
             )}
           </div>
         </main>

@@ -1,11 +1,11 @@
 import React from 'react';
-import { Plus, Database, Sparkles, LogOut } from 'lucide-react';
+import { Plus, Database, Sparkles, LogOut, MessageCircle, Wrench } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { BrandMark } from './BrandMark';
 
 interface NavbarProps {
-  activeTab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses';
-  setActiveTab: (tab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses') => void;
+  activeTab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat';
+  setActiveTab: (tab: 'tasks' | 'schedule' | 'resources' | 'ai' | 'courses' | 'tools' | 'chat') => void;
   onOpenNewTask: () => void;
   onOpenFirebaseModal: () => void;
   connectionStatus: {
@@ -93,6 +93,22 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             Courses
           </button>
+          <button
+            onClick={() => setActiveTab('tools')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === 'tools' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Wrench className="h-3.5 w-3.5" />Tools
+          </button>
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === 'chat' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <MessageCircle className="h-3.5 w-3.5" />Chat
+          </button>
         </nav>
 
         {/* Zone 3: Primary Actions */}
@@ -150,6 +166,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'courses' ? 'text-white font-semibold' : 'text-slate-400'}`}
         >
           Courses
+        </button>
+        <button
+          onClick={() => setActiveTab('tools')}
+          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'tools' ? 'text-white font-semibold' : 'text-slate-400'}`}
+        >
+          Tools
+        </button>
+        <button
+          onClick={() => setActiveTab('chat')}
+          className={`px-2 py-1 rounded whitespace-nowrap ${activeTab === 'chat' ? 'text-white font-semibold' : 'text-slate-400'}`}
+        >
+          Chat
         </button>
       </div>
     </header>

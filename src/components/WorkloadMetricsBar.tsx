@@ -1,6 +1,6 @@
 import React from 'react';
 import { WorkloadAnalysis, AcademicTask } from '../types';
-import { AlertTriangle, Clock, GraduationCap, CheckCircle, CircleAlert } from 'lucide-react';
+import { CalendarDays, Clock, GraduationCap, CheckCircle, CircleAlert } from 'lucide-react';
 import { BrandMark } from './BrandMark';
 
 interface WorkloadMetricsBarProps {
@@ -58,15 +58,16 @@ export const WorkloadMetricsBar: React.FC<WorkloadMetricsBarProps> = ({
           </div>
         </div>
 
-        {/* Metric 2: Urgent Deadlines (<48h) */}
+        {/* Metric 2: Upcoming Deadlines */}
         <div className="border-l border-slate-800 pl-4">
           <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5 mb-1">
-            <AlertTriangle className={`w-3.5 h-3.5 ${metrics.urgentCount > 0 ? 'text-amber-400' : 'text-slate-500'}`} />
-            <span>Urgent Deadlines</span>
+            <CalendarDays className={`w-3.5 h-3.5 ${metrics.urgentCount > 0 ? 'text-amber-400' : 'text-slate-500'}`} />
+            <span>Upcoming Deadlines</span>
           </div>
           <div className="text-2xl font-bold font-mono tabular-nums text-white">
             {metrics.urgentCount}
           </div>
+          <div className="text-[10px] text-slate-500">Open activities with future dates</div>
         </div>
 
         {/* Metric 3: Pending Effort Hours */}
@@ -101,6 +102,7 @@ export const WorkloadMetricsBar: React.FC<WorkloadMetricsBarProps> = ({
           <div className="text-2xl font-bold font-mono tabular-nums text-white">
             {metrics.missingCount}
           </div>
+          <div className="text-[10px] text-slate-500">Overdue or without a due date</div>
         </div>
 
         <div className="col-span-2 lg:col-span-1 flex flex-col justify-center items-start lg:items-end">

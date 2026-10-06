@@ -24,6 +24,8 @@ interface InstitutionalLoginBannerProps {
     newCourses: Subject[],
     newTasks: Omit<AcademicTask, 'id' | 'createdAt'>[]
   ) => Promise<void>;
+  onSynced: () => void;
+  lastSyncedAt: string | null;
   existingSubjects: Subject[];
 }
 
@@ -32,6 +34,8 @@ export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> =
   token,
   onLogout,
   onSyncActivities,
+  onSynced,
+  lastSyncedAt,
   existingSubjects,
 }) => {
   const [isDetecting, setIsDetecting] = useState(false);
@@ -40,6 +44,9 @@ export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> =
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const accountInfo = getInstitutionInfo(user.email);
+  const lastSyncLabel = lastSyncedAt
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(lastSyncedAt))
+    : 'Not synced yet';
 
   const handleDetectAndSync = async () => {
     if (!token) {
@@ -86,6 +93,7 @@ export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> =
       });
 
       await onSyncActivities(result.courses, formattedTasks);
+      onSynced();
 
       if (result.activities.length > 0) {
         setSyncFeedback(
@@ -149,10 +157,19 @@ export const InstitutionalLoginBanner: React.FC<InstitutionalLoginBannerProps> =
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>
                   {accountInfo.isInstitutional
-                    ? 'Classroom & Calendar Synced'
-                    : 'Google Tasks & Calendar Synced'}
+                    ? 'Classroom & Calendar Connected'
+                    : 'Google Tasks & Calendar Connected'}
                 </span>
               </span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-slate-400">
+              {accountInfo.isInstitutional && (
+                <>
+                  <span className="text-emerald-400">Classroom auto-checks every minute</span>
+                  <span className="text-slate-600">·</span>
+                </>
+              )}
+              <span>Last synced: <span className="text-slate-300">{lastSyncLabel}</span></span>
             </div>
           </div>
         </div>

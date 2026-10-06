@@ -87,6 +87,13 @@ export const ResourceHubView: React.FC<ResourceHubViewProps> = ({
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-white">Resource Repository</h2>
+        <span className="text-xs text-slate-400 tabular-nums">
+          {filteredResources.length} of {resources.length} resources
+        </span>
+      </div>
+
       {/* Header & Controls Bar */}
       <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-slate-900/40 p-3 rounded-lg border border-slate-800">
         {/* Search Input */}
@@ -146,14 +153,29 @@ export const ResourceHubView: React.FC<ResourceHubViewProps> = ({
       {filteredResources.length === 0 ? (
         <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-lg p-10 text-center">
           <BookOpen className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-          <p className="text-sm text-slate-400 mb-3">No learning resources found in this category.</p>
-          <button
-            onClick={onOpenNewResource}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-md transition-colors cursor-pointer inline-flex items-center gap-1.5"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Study Material</span>
-          </button>
+          <p className="text-sm text-slate-300 mb-3">
+            {resources.length === 0 ? 'No resources saved yet.' : 'No resources match your search or filters.'}
+          </p>
+          {resources.length === 0 ? (
+            <button
+              onClick={onOpenNewResource}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-md transition-colors cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Study Material</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedSubjectId('all');
+                setSelectedCategory('all');
+              }}
+              className="px-4 py-2 border border-slate-700 text-slate-200 text-xs font-medium rounded-md hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -187,12 +209,16 @@ export const ResourceHubView: React.FC<ResourceHubViewProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => onEditResource(res)}
+                        title={`Edit ${res.title}`}
+                        aria-label={`Edit ${res.title}`}
                         className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => onDeleteResource(res.id)}
+                        title={`Delete ${res.title}`}
+                        aria-label={`Delete ${res.title}`}
                         className="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-rose-950/40 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -201,13 +227,13 @@ export const ResourceHubView: React.FC<ResourceHubViewProps> = ({
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-sm font-semibold text-white mb-2 leading-snug">
+                  <h3 className="text-base font-semibold text-white mb-2 leading-snug">
                     {res.title}
                   </h3>
 
                   {/* Snippet */}
                   {res.contentSnippet && (
-                    <p className="text-xs text-slate-400 mb-3 line-clamp-3 leading-relaxed">
+                    <p className="text-sm text-slate-300 mb-3 line-clamp-3 leading-relaxed">
                       {res.contentSnippet}
                     </p>
                   )}
@@ -227,7 +253,7 @@ export const ResourceHubView: React.FC<ResourceHubViewProps> = ({
 
                 {/* Footer: Date Added & Open Link */}
                 <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-                  <span className="text-[11px] text-slate-500 font-mono tabular-nums">
+                  <span className="text-xs text-slate-400 font-mono tabular-nums">
                     Added {formatDateOnly(res.dateAdded)}
                   </span>
 
@@ -236,9 +262,9 @@ export const ResourceHubView: React.FC<ResourceHubViewProps> = ({
                       href={res.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-indigo-800/60 bg-indigo-950/30 px-2.5 py-1.5 text-xs text-indigo-300 hover:border-indigo-600 hover:text-white font-medium transition-colors"
                     >
-                      <span>Access Material</span>
+                      <span>Open resource</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   ) : (

@@ -48,6 +48,9 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
   const [selectedType, setSelectedType] = useState<string>('all');
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [aiLoadingTaskId, setAiLoadingTaskId] = useState<string | null>(null);
+  const overdueCount = tasks.filter(
+    (task) => task.status !== 'completed' && getCountdown(task.dueDate).isOverdue
+  ).length;
 
   const subjectMap = useMemo(() => {
     const map = new Map<string, Subject>();
@@ -72,7 +75,9 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
         return false;
       }
 
-      if (selectedStatus !== 'all' && task.status !== selectedStatus) {
+      if (selectedStatus === 'overdue') {
+        if (task.status === 'completed' || !getCountdown(task.dueDate).isOverdue) return false;
+      } else if (selectedStatus !== 'all' && task.status !== selectedStatus) {
         return false;
       }
 
@@ -204,6 +209,15 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
               Pending
             </button>
             <button
+              onClick={() => setSelectedStatus('overdue')}
+              aria-pressed={selectedStatus === 'overdue'}
+              className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                selectedStatus === 'overdue' ? 'bg-rose-950/70 text-rose-300 font-medium' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Overdue ({overdueCount})
+            </button>
+            <button
               onClick={() => setSelectedStatus('in_progress')}
               className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
                 selectedStatus === 'in_progress' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:text-white'
@@ -310,7 +324,7 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
 
                       {/* Title */}
                       <h3
-                        className={`text-sm font-semibold text-white leading-snug break-words ${
+                        className={`text-sm sm:text-base font-semibold text-white leading-snug break-words ${
                           task.status === 'completed' ? 'line-through text-slate-400' : ''
                         }`}
                       >
@@ -344,7 +358,7 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                           {task.status === 'completed' ? 'Submitted' : countdown.label}
                         </span>
                       </div>
-                      <div className="text-[11px] text-slate-500 font-mono tabular-nums">
+                      <div className="text-xs text-slate-400 font-mono tabular-nums">
                         {formatDateTime(task.dueDate)}
                       </div>
                     </div>
@@ -383,6 +397,8 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                     {/* Edit */}
                     <button
                       onClick={() => onEditTask(task)}
+                      title="Edit activity"
+                      aria-label={`Edit ${task.title}`}
                       className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -391,6 +407,8 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                     {/* Delete */}
                     <button
                       onClick={() => onDeleteTask(task.id)}
+                      title="Delete activity"
+                      aria-label={`Delete ${task.title}`}
                       className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition-colors cursor-pointer shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
